@@ -174,8 +174,12 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
             >
               <div className="relative">
                 <div onClick={() => toggleAvatarSelector(player.id)} className="cursor-pointer">
-                  <Avatar className="w-16 h-16 border-2 border-op-ocean">
-                    <AvatarImage src={player.avatar} alt="Player Avatar" className="object-cover" />
+                  <Avatar className="w-16 h-16 border-2 border-op-ocean overflow-hidden">
+                    <AvatarImage 
+                      src={player.avatar} 
+                      alt="Player Avatar" 
+                      className="w-full h-full object-cover"
+                    />
                     <AvatarFallback className="bg-op-ocean text-white">
                       {player.name.substring(0, 2) || "OP"}
                     </AvatarFallback>
@@ -204,7 +208,17 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
                             player.avatar === avatar ? 'border-op-ocean scale-110' : 'border-transparent hover:border-gray-300'
                           }`}
                         >
-                          <img src={avatar} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
+                          <img 
+                            src={avatar} 
+                            alt={`Avatar ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = 'https://cdn.iconscout.com/icon/free/png-256/free-avatar-370-456322.png';
+                            }}
+                          />
                         </div>
                       ))}
                     </div>

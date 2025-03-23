@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, RefreshCcw, EyeOff } from 'lucide-react';
 import { QuizQuestion } from '../data/quizQuestions';
 import { Player } from './PlayerSetup';
 import { shuffleArray } from '../utils/quizHelpers';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface QuizCardProps {
   question: QuizQuestion;
@@ -137,11 +137,16 @@ const QuizCard: React.FC<QuizCardProps> = ({
     <div className="w-full max-w-4xl mx-auto glass-card p-6 md:p-8 rtl">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-3 rtl:space-x-reverse">
-          <img 
-            src={currentPlayer.avatar} 
-            alt={currentPlayer.name}
-            className="w-10 h-10 rounded-full object-cover border-2 border-op-ocean"
-          />
+          <Avatar className="w-10 h-10 border-2 border-op-ocean overflow-hidden">
+            <AvatarImage 
+              src={currentPlayer.avatar} 
+              alt={currentPlayer.name}
+              className="w-full h-full object-cover"
+            />
+            <AvatarFallback className="bg-op-ocean text-white">
+              {currentPlayer.name?.substring(0, 2) || "OP"}
+            </AvatarFallback>
+          </Avatar>
           <span className="font-medium text-lg text-op-navy">{currentPlayer.name}</span>
         </div>
         
@@ -242,7 +247,11 @@ const QuizCard: React.FC<QuizCardProps> = ({
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-white shadow-md hover:bg-op-ocean hover:text-white'
           }`}
-          onClick={handleShowHint}
+          onClick={() => {
+            if (!playerHelpers.showHint && selectedOption === null) {
+              onUseHelper('showHint');
+            }
+          }}
           disabled={playerHelpers.showHint || selectedOption !== null}
           whileHover={!playerHelpers.showHint && selectedOption === null ? { scale: 1.05 } : {}}
           whileTap={!playerHelpers.showHint && selectedOption === null ? { scale: 0.95 } : {}}
@@ -257,7 +266,11 @@ const QuizCard: React.FC<QuizCardProps> = ({
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-white shadow-md hover:bg-op-ocean hover:text-white'
           }`}
-          onClick={handleChangeQuestion}
+          onClick={() => {
+            if (!playerHelpers.changeQuestion && selectedOption === null) {
+              onUseHelper('changeQuestion');
+            }
+          }}
           disabled={playerHelpers.changeQuestion || selectedOption !== null}
           whileHover={!playerHelpers.changeQuestion && selectedOption === null ? { scale: 1.05 } : {}}
           whileTap={!playerHelpers.changeQuestion && selectedOption === null ? { scale: 0.95 } : {}}
