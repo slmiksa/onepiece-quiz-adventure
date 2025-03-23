@@ -21,7 +21,7 @@ const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({
 
   // If route requires admin access, check admin status
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/auth" />;
+    return <Navigate to="/admin/login" />;
   }
 
   // For regular authenticated routes

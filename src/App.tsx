@@ -17,6 +17,7 @@ import CreateRoomPage from "./pages/CreateRoomPage";
 import RoomPage from "./pages/RoomPage";
 import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import AdminIndex from "./pages/admin/AdminIndex";
+import AdminLogin from "./pages/admin/AdminLogin";
 import Announcement from "./components/Announcement";
 import OnePieceBackground from "./components/OnePieceBackground";
 
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/create-room" element={<CreateRoomPage />} />
               <Route path="/room/:roomId" element={<RoomPage />} />
               <Route path="/share/:quizId" element={<PlayQuiz />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/*" element={
                 <AuthenticatedRoute requireAdmin={true}>
                   <AdminIndex />

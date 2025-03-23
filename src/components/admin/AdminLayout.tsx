@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -48,14 +47,14 @@ const AdminLayout: React.FC = () => {
     );
   }
 
-  // If not admin, redirect to auth page
+  // If not admin, redirect to admin login page
   if (!isAdmin) {
     toast({
       title: "غير مصرح",
       description: "يجب تسجيل الدخول كمسؤول للوصول إلى لوحة التحكم",
       variant: "destructive",
     });
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   return (
