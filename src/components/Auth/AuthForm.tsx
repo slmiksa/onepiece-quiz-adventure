@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +20,7 @@ const AuthForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [adminUsername, setAdminUsername] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,8 +31,8 @@ const AuthForm: React.FC = () => {
     setLoading(true);
 
     try {
-      // Simple admin credentials check - no email required
-      if (adminUsername === 'admin' && adminPassword === 'admin') {
+      // Updated admin credentials check
+      if (adminEmail === 's34009058@gmail.com' && adminPassword === 'admin') {
         // Store admin status in localStorage
         localStorage.setItem('isAdmin', 'true');
         
@@ -232,13 +233,13 @@ const AuthForm: React.FC = () => {
         <TabsContent value="admin">
           <form onSubmit={handleAdminSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
-              <Label htmlFor="admin-username" className="text-white">اسم المستخدم</Label>
+              <Label htmlFor="admin-email" className="text-white">البريد الإلكتروني</Label>
               <Input
-                id="admin-username"
-                type="text"
-                value={adminUsername}
-                onChange={(e) => setAdminUsername(e.target.value)}
-                placeholder="أدخل اسم المستخدم للمسؤول"
+                id="admin-email"
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="أدخل البريد الإلكتروني للمسؤول"
                 required
                 className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
               />
