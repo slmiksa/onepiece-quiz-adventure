@@ -130,7 +130,7 @@ export const getTopScores = async (limit: number = 10): Promise<DbQuizResult[]> 
 export const createSharedQuiz = async (players: Player[], difficulty: string): Promise<string | null> => {
   try {
     // Generate a short random ID for the quiz
-    const quizId = generateId(6);
+    const quizId = generateId(); // Fixed: Removed the argument here
     
     // Store the shared quiz in localStorage for now (in a real app, use Supabase Realtime)
     const sharedQuiz: SharedQuiz = {
