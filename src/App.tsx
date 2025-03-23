@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import MangaNews from "./pages/MangaNews";
 import QuizGame from "./pages/QuizGame";
 import PlayQuiz from "./pages/PlayQuiz";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/manga" element={<MangaNews />} />
           <Route path="/quiz" element={<QuizGame />} />
           <Route path="/play" element={<PlayQuiz />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

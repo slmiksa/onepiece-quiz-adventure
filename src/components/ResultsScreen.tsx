@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Player } from './PlayerSetup';
-import { Award, RotateCcw, Home } from 'lucide-react';
+import { Award, RotateCcw, Home, TrendingUp } from 'lucide-react';
+import { saveQuizResult } from '../utils/supabaseHelpers';
+import { useToast } from "@/components/ui/use-toast";
 
 interface PlayerResult {
   player: Player;
@@ -14,10 +16,19 @@ interface PlayerResult {
 interface ResultsScreenProps {
   results: PlayerResult[];
   onPlayAgain: () => void;
+  difficulty: string;
+  dbPlayerIds?: Record<number, string>;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onPlayAgain }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ 
+  results, 
+  onPlayAgain, 
+  difficulty,
+  dbPlayerIds = {} 
+}) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(true);
   
   // Sort players by score (descending)
   const sortedResults = [...results].sort((a, b) => b.score - a.score);
@@ -26,6 +37,44 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onPlayAgain }) =
   const highestScore = sortedResults[0]?.score || 0;
   const winners = sortedResults.filter(r => r.score === highestScore);
   const isTie = winners.length > 1;
+  
+  useEffect(() => {
+    const saveResults = async () => {
+      try {
+        // Save all results to the database
+        for (const result of results) {
+          const dbPlayerId = dbPlayerIds[result.player.id];
+          
+          // Skip if we don't have a database ID for this player
+          if (!dbPlayerId) continue;
+          
+          await saveQuizResult(
+            dbPlayerId,
+            result.score,
+            result.totalQuestions,
+            difficulty
+          );
+        }
+        
+        toast({
+          title: "تم حفظ النتائج",
+          description: "تم حفظ نتائج الاختبار بنجاح",
+          variant: "default"
+        });
+      } catch (error) {
+        console.error('Error saving results:', error);
+        toast({
+          title: "خطأ في الحفظ",
+          description: "تعذر حفظ نتائج الاختبار",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    };
+    
+    saveResults();
+  }, [results, dbPlayerIds, difficulty, toast]);
   
   const getPositionClass = (index: number) => {
     if (index === 0) return 'bg-op-yellow text-op-navy';
@@ -63,6 +112,15 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onPlayAgain }) =
   
   return (
     <div className="w-full max-w-4xl mx-auto glass-card p-6 md:p-8 rtl">
+      {isSaving && (
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center rounded-lg z-10">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-3 rtl:space-x-reverse">
+            <div className="w-5 h-5 border-4 border-op-ocean border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-op-navy">جارٍ حفظ النتائج...</span>
+          </div>
+        </div>
+      )}
+      
       <motion.div
         className="text-center mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -168,6 +226,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onPlayAgain }) =
         >
           <RotateCcw size={18} />
           <span>لعب مرة أخرى</span>
+        </button>
+        
+        <button 
+          onClick={() => navigate('/leaderboard')}
+          className="btn-accent flex items-center justify-center space-x-2 rtl:space-x-reverse"
+        >
+          <TrendingUp size={18} />
+          <span>سجل النتائج</span>
         </button>
         
         <button 

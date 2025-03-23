@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -7,6 +6,7 @@ import ResultsScreen from '../components/ResultsScreen';
 import { getQuizQuestions, QuizQuestion } from '../data/quizQuestions';
 import { Player } from '../components/PlayerSetup';
 import { motion, AnimatePresence } from 'framer-motion';
+import { savePlayersToDb } from '../utils/supabaseHelpers';
 
 interface PlayerState {
   player: Player;
@@ -23,12 +23,13 @@ interface PlayerState {
 const PlayQuiz: React.FC = () => {
   const [players, setPlayers] = useState<PlayerState[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [gameOver, setGameOver] = useState(false);
   const [roundTransition, setRoundTransition] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [difficulty, setDifficulty] = useState('medium');
+  const [dbPlayerIds, setDbPlayerIds] = useState<Record<number, string>>({});
   
   const navigate = useNavigate();
   
@@ -36,7 +37,7 @@ const PlayQuiz: React.FC = () => {
   
   // Initialize the game
   useEffect(() => {
-    const initializeGame = () => {
+    const initializeGame = async () => {
       try {
         // Get players and difficulty from sessionStorage
         const storedPlayers = sessionStorage.getItem('quizPlayers');
@@ -49,11 +50,16 @@ const PlayQuiz: React.FC = () => {
         }
         
         const parsedPlayers: Player[] = JSON.parse(storedPlayers);
-        const difficulty = storedDifficulty;
+        const difficultyValue = storedDifficulty;
+        setDifficulty(difficultyValue);
+        
+        // Save players to database and get mapping of local IDs to DB IDs
+        const playerIdsMap = await savePlayersToDb(parsedPlayers);
+        setDbPlayerIds(playerIdsMap);
         
         // Get enough questions for all players
         const totalQuestionsNeeded = parsedPlayers.length * questionsPerPlayer;
-        const allQuestions = getQuizQuestions(difficulty, totalQuestionsNeeded);
+        const allQuestions = getQuizQuestions(difficultyValue, totalQuestionsNeeded);
         
         // Setup player states
         const playerStates: PlayerState[] = parsedPlayers.map((player, index) => {
@@ -231,7 +237,12 @@ const PlayQuiz: React.FC = () => {
     return (
       <Layout>
         <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
-          <ResultsScreen results={results} onPlayAgain={handlePlayAgain} />
+          <ResultsScreen 
+            results={results} 
+            onPlayAgain={handlePlayAgain} 
+            difficulty={difficulty}
+            dbPlayerIds={dbPlayerIds}
+          />
         </div>
       </Layout>
     );

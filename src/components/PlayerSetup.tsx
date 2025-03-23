@@ -1,8 +1,9 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, X, Check } from 'lucide-react';
+import { savePlayersToDb } from '../utils/supabaseHelpers';
+import { useToast } from "@/components/ui/use-toast";
 
 export interface Player {
   id: number;
@@ -31,7 +32,9 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
   const [players, setPlayers] = useState<Player[]>([{ id: 1, name: '', avatar: DEFAULT_AVATARS[0] }]);
   const [difficulty, setDifficulty] = useState('medium');
   const [errors, setErrors] = useState<{[key: number]: string}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const maxPlayers = 5;
   
@@ -49,7 +52,6 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
   const removePlayer = (id: number) => {
     if (players.length > 1) {
       setPlayers(players.filter(player => player.id !== id));
-      // Also remove any errors for this player
       const newErrors = {...errors};
       delete newErrors[id];
       setErrors(newErrors);
@@ -61,7 +63,6 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
       player.id === id ? { ...player, name } : player
     ));
     
-    // Clear error if name is not empty
     if (name.trim()) {
       const newErrors = {...errors};
       delete newErrors[id];
@@ -86,7 +87,6 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
       }
     });
     
-    // Check for duplicate names
     const names = players.map(p => p.name.trim().toLowerCase());
     const duplicates = names.filter((name, index) => 
       name && names.indexOf(name) !== index
@@ -105,11 +105,25 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
     return isValid;
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validatePlayers()) {
-      onPlayersSubmit(players, difficulty);
+      setIsSubmitting(true);
+      
+      try {
+        await savePlayersToDb(players);
+        onPlayersSubmit(players, difficulty);
+      } catch (error) {
+        console.error('Error saving players:', error);
+        toast({
+          title: "خطأ في الاتصال",
+          description: "تعذر حفظ بيانات اللاعبين، الرجاء المحاولة مرة أخرى",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
   
@@ -259,10 +273,15 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
         >
           <button 
             type="submit"
+            disabled={isSubmitting}
             className="w-full bg-op-yellow text-op-navy py-4 rounded-md font-bold text-lg shadow-md hover:bg-op-straw transition-colors flex items-center justify-center space-x-2 rtl:space-x-reverse"
           >
-            <Check size={20} />
-            <span>بدء اللعبة</span>
+            {isSubmitting ? (
+              <div className="w-5 h-5 border-2 border-op-navy border-t-transparent rounded-full animate-spin mr-2 rtl:ml-2 rtl:mr-0"></div>
+            ) : (
+              <Check size={20} />
+            )}
+            <span>{isSubmitting ? 'جارِ الحفظ...' : 'بدء اللعبة'}</span>
           </button>
         </motion.div>
       </form>

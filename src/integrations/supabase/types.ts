@@ -9,7 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      players: {
+        Row: {
+          avatar: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          avatar: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          avatar?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          created_at: string
+          difficulty: string
+          id: string
+          player_id: string
+          score: number
+          total_questions: number
+        }
+        Insert: {
+          created_at?: string
+          difficulty: string
+          id?: string
+          player_id: string
+          score: number
+          total_questions: number
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string
+          id?: string
+          player_id?: string
+          score?: number
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
