@@ -11,7 +11,14 @@ import PlayQuiz from "./pages/PlayQuiz";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -25,6 +32,7 @@ const App = () => (
           <Route path="/quiz" element={<QuizGame />} />
           <Route path="/play" element={<PlayQuiz />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/share/:quizId" element={<PlayQuiz />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

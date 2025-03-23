@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Player } from './PlayerSetup';
-import { Award, RotateCcw, Home, TrendingUp } from 'lucide-react';
+import { Award, RotateCcw, Home, TrendingUp, Share2 } from 'lucide-react';
 import { saveQuizResult } from '../utils/supabaseHelpers';
 import { useToast } from "@/components/ui/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface PlayerResult {
   player: Player;
@@ -29,6 +30,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(true);
+  const [showShareLink, setShowShareLink] = useState(false);
+  const [shareLink, setShareLink] = useState('');
   
   // Sort players by score (descending)
   const sortedResults = [...results].sort((a, b) => b.score - a.score);
@@ -75,6 +78,39 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
     
     saveResults();
   }, [results, dbPlayerIds, difficulty, toast]);
+  
+  const handleShareResults = () => {
+    // Generate a share link with results encoded in query params
+    const resultsData = encodeURIComponent(JSON.stringify({
+      players: results.map(r => ({
+        name: r.player.name,
+        score: r.score,
+        total: r.totalQuestions
+      })),
+      difficulty
+    }));
+    
+    const shareUrl = `${window.location.origin}/quiz?share=${resultsData}`;
+    setShareLink(shareUrl);
+    setShowShareLink(true);
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareUrl)
+      .then(() => {
+        toast({
+          title: "تم نسخ الرابط",
+          description: "تم نسخ رابط المشاركة إلى الحافظة",
+          variant: "default"
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "تعذر نسخ الرابط",
+          description: "يرجى نسخ الرابط يدويًا",
+          variant: "destructive"
+        });
+      });
+  };
   
   const getPositionClass = (index: number) => {
     if (index === 0) return 'bg-op-yellow text-op-navy';
@@ -148,11 +184,16 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 className="relative"
               >
                 <div className="relative z-10">
-                  <img 
-                    src={winners[0].player.avatar} 
-                    alt={winners[0].player.name}
-                    className="w-24 h-24 rounded-full object-cover border-4 border-op-yellow shadow-lg"
-                  />
+                  <Avatar className="w-24 h-24 border-4 border-op-yellow">
+                    <AvatarImage 
+                      src={winners[0].player.avatar} 
+                      alt={winners[0].player.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <AvatarFallback className="bg-op-ocean text-white text-xl">
+                      {winners[0].player.name?.substring(0, 2) || "OP"}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="absolute -bottom-2 -right-2 bg-op-yellow rounded-full p-2 shadow-md">
                     <Award className="h-5 w-5 text-op-navy" />
                   </div>
@@ -192,11 +233,16 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
             </div>
             
             <div className="flex items-center flex-1 mr-4">
-              <img 
-                src={result.player.avatar} 
-                alt={result.player.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-white mr-3"
-              />
+              <Avatar className="w-12 h-12 border-2 border-white mr-3">
+                <AvatarImage 
+                  src={result.player.avatar} 
+                  alt={result.player.name}
+                  className="w-full h-full object-cover"
+                />
+                <AvatarFallback className="bg-op-ocean text-white">
+                  {result.player.name?.substring(0, 2) || "OP"}
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <h4 className="font-bold">{result.player.name}</h4>
                 <div className="flex items-center">
@@ -214,6 +260,38 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         ))}
       </motion.div>
       
+      {showShareLink && (
+        <motion.div 
+          className="mb-6 bg-white bg-opacity-20 p-4 rounded-lg"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          transition={{ duration: 0.3 }}
+        >
+          <p className="mb-2 font-medium text-op-navy">رابط المشاركة:</p>
+          <div className="flex items-center bg-white bg-opacity-40 rounded p-2">
+            <input 
+              type="text" 
+              value={shareLink} 
+              readOnly 
+              className="flex-1 bg-transparent border-none focus:outline-none text-sm text-gray-700" 
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(shareLink);
+                toast({
+                  title: "تم النسخ",
+                  description: "تم نسخ الرابط إلى الحافظة",
+                  variant: "default"
+                });
+              }}
+              className="ml-2 p-2 bg-op-ocean text-white rounded hover:bg-op-blue transition"
+            >
+              نسخ
+            </button>
+          </div>
+        </motion.div>
+      )}
+      
       <motion.div
         className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 rtl:space-x-reverse"
         initial={{ opacity: 0 }}
@@ -226,6 +304,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         >
           <RotateCcw size={18} />
           <span>لعب مرة أخرى</span>
+        </button>
+        
+        <button 
+          onClick={handleShareResults}
+          className="btn-accent flex items-center justify-center space-x-2 rtl:space-x-reverse"
+        >
+          <Share2 size={18} />
+          <span>مشاركة النتائج</span>
         </button>
         
         <button 

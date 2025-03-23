@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, RefreshCcw, EyeOff } from 'lucide-react';
@@ -43,7 +44,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
     setShowHint(false);
     setImageLoaded(false);
     
-    // Randomize options for each question
+    // Randomize options for each question to ensure answer position varies
     const options = question.options.map((option, index) => ({
       text: option,
       index: index
@@ -72,7 +73,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
     };
   }, [question, onTimeout]);
   
-  // Apply helpers when they are used in this specific question
+  // Apply helpers when they are used for this specific question
   useEffect(() => {
     if (playerHelpers.removeOptions) {
       handleRemoveOptions();
@@ -113,18 +114,6 @@ const QuizCard: React.FC<QuizCardProps> = ({
     if (randomizedOptions.length > 0) {
       setHideOptions(getOptionsToRemove());
     }
-  };
-  
-  const handleShowHint = () => {
-    setShowHint(true);
-    onUseHelper('showHint');
-  };
-  
-  const handleChangeQuestion = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    onUseHelper('changeQuestion');
   };
   
   // Handle image error

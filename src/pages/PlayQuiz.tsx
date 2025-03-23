@@ -21,6 +21,11 @@ interface PlayerState {
     changeQuestion: boolean;
   };
   questions: QuizQuestion[];
+  usedHelpers: {
+    removeOptions: boolean;
+    showHint: boolean;
+    changeQuestion: boolean;
+  }; // Track used helpers across all questions
 }
 
 const PlayQuiz: React.FC = () => {
@@ -67,11 +72,11 @@ const PlayQuiz: React.FC = () => {
           // Continue with game even if DB save fails
         }
         
-        // Get enough questions for all players
+        // Get enough questions for all players - get at least 100 questions
         const totalQuestionsNeeded = parsedPlayers.length * questionsPerPlayer;
-        let allQuestions = getQuizQuestions(difficultyValue, totalQuestionsNeeded * 2); // Get more questions to ensure we have enough unique ones
+        let allQuestions = getQuizQuestions(difficultyValue, Math.max(totalQuestionsNeeded * 2, 100)); 
         
-        // Make sure we have enough questions (at least questionsPerPlayer * number of players)
+        // Make sure we have enough questions
         if (allQuestions.length < totalQuestionsNeeded) {
           console.warn('Not enough questions available. Reducing questions per player.');
           setQuestionsPerPlayer(Math.floor(allQuestions.length / parsedPlayers.length));
@@ -95,7 +100,12 @@ const PlayQuiz: React.FC = () => {
               showHint: false,
               changeQuestion: false
             },
-            questions: playerQuestions
+            questions: playerQuestions,
+            usedHelpers: {
+              removeOptions: false,
+              showHint: false,
+              changeQuestion: false
+            }
           };
         });
         
@@ -211,6 +221,16 @@ const PlayQuiz: React.FC = () => {
       const updatedPlayers = [...prevPlayers];
       const currentPlayer = { ...updatedPlayers[currentPlayerIndex] };
       
+      // If helper has been used already by this player (across all questions), don't allow it again
+      if (currentPlayer.usedHelpers[helper]) {
+        toast({
+          title: "لا يمكن استخدام المساعدة",
+          description: "لقد استخدمت هذه المساعدة بالفعل",
+          variant: "destructive"
+        });
+        return updatedPlayers;
+      }
+      
       if (helper === 'changeQuestion') {
         // Get a new question
         const nextIndex = currentPlayer.currentQuestionIndex + 1;
@@ -225,16 +245,22 @@ const PlayQuiz: React.FC = () => {
         }
       }
       
-      // Mark the helper as used for this question only
+      // Mark the helper as used for this question
       currentPlayer.helpers = {
         ...currentPlayer.helpers,
+        [helper]: true
+      };
+      
+      // Also mark it as used overall
+      currentPlayer.usedHelpers = {
+        ...currentPlayer.usedHelpers,
         [helper]: true
       };
       
       updatedPlayers[currentPlayerIndex] = currentPlayer;
       return updatedPlayers;
     });
-  }, [currentPlayerIndex]);
+  }, [currentPlayerIndex, toast]);
   
   const handlePlayAgain = useCallback(() => {
     // Clear session storage and redirect to quiz setup
@@ -367,11 +393,16 @@ const PlayQuiz: React.FC = () => {
                       : 'bg-white bg-opacity-20 text-white'
                   }`}
                 >
-                  <img 
-                    src={p.player.avatar} 
-                    alt={p.player.name}
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
+                  <Avatar className="w-6 h-6 overflow-hidden">
+                    <AvatarImage 
+                      src={p.player.avatar} 
+                      alt={p.player.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <AvatarFallback className="bg-op-ocean text-white text-xs">
+                      {p.player.name?.substring(0, 2) || "OP"}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="text-sm">{p.player.name}</span>
                   <span className="text-xs opacity-80">{p.score}/{questionsPerPlayer}</span>
                 </div>
