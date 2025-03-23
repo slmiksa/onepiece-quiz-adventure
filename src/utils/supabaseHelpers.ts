@@ -842,16 +842,23 @@ export const updateQuestion = async (
   updates: Partial<Pick<DbQuestion, 'question' | 'options' | 'correct_answer' | 'difficulty' | 'category'>>
 ): Promise<boolean> => {
   try {
-    const updatedData = { ...updates };
+    // Create a new object with the updates that will be sent to Supabase
+    const supabaseUpdates: Record<string, any> = {};
     
-    // Convert options to Json if it exists in the updates
+    // Copy over simple string properties
+    if (updates.question) supabaseUpdates.question = updates.question;
+    if (updates.correct_answer) supabaseUpdates.correct_answer = updates.correct_answer;
+    if (updates.difficulty) supabaseUpdates.difficulty = updates.difficulty;
+    if (updates.category) supabaseUpdates.category = updates.category;
+    
+    // Handle the options property with the proper type conversion
     if (updates.options) {
-      updatedData.options = updates.options as unknown as Json;
+      supabaseUpdates.options = updates.options as unknown as Json;
     }
     
     const { error } = await supabase
       .from('questions')
-      .update(updatedData)
+      .update(supabaseUpdates)
       .eq('id', id);
     
     if (error) {
