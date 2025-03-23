@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -33,14 +32,15 @@ const AuthForm: React.FC = () => {
     try {
       // Simple admin credentials check - no email required
       if (adminUsername === 'admin' && adminPassword === 'admin') {
+        // Store admin status in localStorage
+        localStorage.setItem('isAdmin', 'true');
+        
         toast({
           title: 'تم تسجيل دخول المسؤول بنجاح',
           description: 'مرحبًا بك في لوحة التحكم',
         });
-
-        // Store admin status in localStorage
-        localStorage.setItem('isAdmin', 'true');
         
+        // Navigate to admin dashboard
         navigate('/admin');
       } else {
         throw new Error('بيانات المسؤول غير صحيحة');

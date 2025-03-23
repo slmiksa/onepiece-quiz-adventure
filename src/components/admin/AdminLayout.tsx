@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,20 +7,29 @@ import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButt
 import { Bell, Book, BrainCircuit, Home, Image, MessageCircle, Settings, User, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminLayout: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminCheckLoading, setAdminCheckLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
+      // First check localStorage for admin status
       const adminStatus = localStorage.getItem('isAdmin') === 'true';
       
+      // If not admin from localStorage, check Supabase if user is authenticated
       if (!adminStatus && isAuthenticated && user) {
-        const supabaseAdminStatus = await isUserAdmin();
-        setIsAdmin(supabaseAdminStatus);
+        try {
+          const supabaseAdminStatus = await isUserAdmin();
+          setIsAdmin(supabaseAdminStatus);
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
+        }
       } else {
         setIsAdmin(adminStatus);
       }
@@ -38,7 +48,13 @@ const AdminLayout: React.FC = () => {
     );
   }
 
+  // If not admin, redirect to auth page
   if (!isAdmin) {
+    toast({
+      title: "غير مصرح",
+      description: "يجب تسجيل الدخول كمسؤول للوصول إلى لوحة التحكم",
+      variant: "destructive",
+    });
     return <Navigate to="/auth" replace />;
   }
 

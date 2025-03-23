@@ -5,16 +5,27 @@ import { useAuth } from '@/context/AuthContext';
 
 type AuthenticatedRouteProps = {
   children: React.ReactNode;
+  requireAdmin?: boolean;
 };
 
-const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ children }) => {
+const AuthenticatedRoute: React.FC<AuthenticatedRouteProps> = ({ 
+  children,
+  requireAdmin = false 
+}) => {
   const { isAuthenticated, loading } = useAuth();
+  const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">جاري التحميل...</div>;
   }
 
-  if (!isAuthenticated) {
+  // If route requires admin access, check admin status
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/auth" />;
+  }
+
+  // For regular authenticated routes
+  if (!isAuthenticated && !isAdmin) {
     return <Navigate to="/auth" />;
   }
 

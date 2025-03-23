@@ -58,7 +58,7 @@ const App = () => (
               <Route path="/room/:roomId" element={<RoomPage />} />
               <Route path="/share/:quizId" element={<PlayQuiz />} />
               <Route path="/admin/*" element={
-                <AuthenticatedRoute>
+                <AuthenticatedRoute requireAdmin={true}>
                   <AdminIndex />
                 </AuthenticatedRoute>
               } />
