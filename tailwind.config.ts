@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// One Piece theme colors
+				'op-blue': '#005BBB',
+				'op-red': '#E60012',
+				'op-yellow': '#FFC800',
+				'op-straw': '#FFF1BD',
+				'op-ocean': '#0078D4',
+				'op-deep-sea': '#003A70',
+				'op-navy': '#001F3F',
+				'op-black': '#111827',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -70,25 +80,80 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'fade-out': {
+					'0%': { opacity: '1', transform: 'translateY(0)' },
+					'100%': { opacity: '0', transform: 'translateY(10px)' }
+				},
+				'scale-in': {
+					'0%': { transform: 'scale(0.95)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
+				},
+				'scale-out': {
+					from: { transform: 'scale(1)', opacity: '1' },
+					to: { transform: 'scale(0.95)', opacity: '0' }
+				},
+				'slide-in-right': {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(0)' }
+				},
+				'slide-out-right': {
+					'0%': { transform: 'translateX(0)' },
+					'100%': { transform: 'translateX(100%)' }
+				},
+				'wave': {
+					'0%': { transform: 'translateY(0px)' },
+					'50%': { transform: 'translateY(-15px)' },
+					'100%': { transform: 'translateY(0px)' }
+				},
+				'bounce-slow': {
+					'0%, 100%': { transform: 'translateY(-5%)' },
+					'50%': { transform: 'translateY(0)' }
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'fade-out': 'fade-out 0.5s ease-out',
+				'scale-in': 'scale-in 0.3s ease-out',
+				'scale-out': 'scale-out 0.3s ease-out',
+				'slide-in-right': 'slide-in-right 0.5s ease-out',
+				'slide-out-right': 'slide-out-right 0.5s ease-out',
+				'enter': 'fade-in 0.5s ease-out, scale-in 0.3s ease-out',
+				'exit': 'fade-out 0.5s ease-out, scale-out 0.3s ease-out',
+				'wave': 'wave 3s ease-in-out infinite',
+				'bounce-slow': 'bounce-slow 4s ease-in-out infinite',
+				'float': 'float 6s ease-in-out infinite'
+			},
+			backgroundImage: {
+				'ocean-pattern': "url('https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1920&q=80')",
+				'gradient-ocean': 'linear-gradient(to bottom, rgba(0, 91, 187, 0.1), rgba(0, 58, 112, 0.8))'
+			},
+			boxShadow: {
+				'soft-xl': '0 10px 25px -3px rgba(0, 0, 0, 0.1)',
+				'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.2)'
+			},
+			typography: {
+				DEFAULT: {
+					css: {
+						maxWidth: '100%'
+					}
+				}
 			}
 		}
 	},
