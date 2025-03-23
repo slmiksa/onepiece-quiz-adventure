@@ -9,6 +9,109 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          active: boolean
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avatars: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          image_url: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      manga_pages: {
+        Row: {
+          chapter: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string
+          page_number: number
+          title: string
+        }
+        Insert: {
+          chapter: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          page_number: number
+          title: string
+        }
+        Update: {
+          chapter?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          page_number?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manga_pages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           avatar: string
@@ -29,6 +132,47 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      questions: {
+        Row: {
+          category: string
+          correct_answer: string
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          id: string
+          options: Json
+          question: string
+        }
+        Insert: {
+          category: string
+          correct_answer: string
+          created_at?: string
+          created_by?: string | null
+          difficulty: string
+          id?: string
+          options: Json
+          question: string
+        }
+        Update: {
+          category?: string
+          correct_answer?: string
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          id?: string
+          options?: Json
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_results: {
         Row: {
@@ -186,6 +330,7 @@ export type Database = {
           avatar: string
           created_at: string
           id: string
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           username: string
         }
@@ -193,6 +338,7 @@ export type Database = {
           avatar: string
           created_at?: string
           id: string
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username: string
         }
@@ -200,6 +346,7 @@ export type Database = {
           avatar?: string
           created_at?: string
           id?: string
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string
         }
@@ -210,10 +357,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "user" | "admin" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
