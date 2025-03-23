@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, RefreshCcw, EyeOff } from 'lucide-react';
@@ -34,22 +35,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   const [randomizedOptions, setRandomizedOptions] = useState<{text: string, index: number}[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
-  useEffect(() => {
-    const options = question.options.map((option, index) => ({
-      text: option,
-      index: index
-    }));
-    setRandomizedOptions(shuffleArray(options));
-  }, [question]);
-  
-  const getOptionsToRemove = () => {
-    const incorrectOptionIndices = randomizedOptions
-      .map((option, index) => option.index !== question.correctAnswer ? index : -1)
-      .filter(index => index !== -1);
-    
-    return shuffleArray(incorrectOptionIndices).slice(0, 2);
-  };
-  
+  // Reset state when question changes
   useEffect(() => {
     setSelectedOption(null);
     setTimeLeft(30);
@@ -57,18 +43,21 @@ const QuizCard: React.FC<QuizCardProps> = ({
     setShowHint(false);
     setImageLoaded(false);
     
-    if (playerHelpers.removeOptions && randomizedOptions.length > 0) {
-      setHideOptions(getOptionsToRemove());
-    }
+    // Randomize options for each question
+    const options = question.options.map((option, index) => ({
+      text: option,
+      index: index
+    }));
     
-    if (playerHelpers.showHint) {
-      setShowHint(true);
-    }
+    setRandomizedOptions(shuffleArray(options));
     
+    // Setup timer
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          clearInterval(timerRef.current!);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
           onTimeout();
           return 0;
         }
@@ -81,7 +70,28 @@ const QuizCard: React.FC<QuizCardProps> = ({
         clearInterval(timerRef.current);
       }
     };
-  }, [question, playerHelpers, randomizedOptions]);
+  }, [question, onTimeout]);
+  
+  // Apply helpers when they are used in this specific question
+  useEffect(() => {
+    if (playerHelpers.removeOptions) {
+      handleRemoveOptions();
+    }
+    
+    if (playerHelpers.showHint) {
+      setShowHint(true);
+    }
+  }, [playerHelpers]);
+  
+  const getOptionsToRemove = () => {
+    const incorrectOptionIndices = randomizedOptions
+      .filter(option => option.index !== question.correctAnswer)
+      .map((_, index) => index);
+    
+    // Ensure we don't try to remove more options than available
+    const numToRemove = Math.min(2, incorrectOptionIndices.length);
+    return shuffleArray(incorrectOptionIndices).slice(0, numToRemove);
+  };
   
   const handleOptionClick = (index: number, originalIndex: number) => {
     if (selectedOption !== null || hideOptions.includes(index)) return;
@@ -100,26 +110,27 @@ const QuizCard: React.FC<QuizCardProps> = ({
   };
   
   const handleRemoveOptions = () => {
-    if (!playerHelpers.removeOptions && randomizedOptions.length > 0) {
-      onUseHelper('removeOptions');
+    if (randomizedOptions.length > 0) {
       setHideOptions(getOptionsToRemove());
     }
   };
   
   const handleShowHint = () => {
-    if (!playerHelpers.showHint) {
-      onUseHelper('showHint');
-      setShowHint(true);
-    }
+    setShowHint(true);
+    onUseHelper('showHint');
   };
   
   const handleChangeQuestion = () => {
-    if (!playerHelpers.changeQuestion) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      onUseHelper('changeQuestion');
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
     }
+    onUseHelper('changeQuestion');
+  };
+  
+  // Handle image error
+  const handleImageError = () => {
+    console.error("Image failed to load:", question.image);
+    setImageLoaded(true); // Mark as loaded to remove loading spinner
   };
   
   return (
@@ -160,7 +171,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
           alt="Question"
           className={`w-full h-auto max-h-[350px] object-contain ${imageLoaded ? '' : 'opacity-0'}`}
           onLoad={() => setImageLoaded(true)}
-          onError={() => setImageLoaded(true)}
+          onError={handleImageError}
         />
       </div>
       
@@ -212,7 +223,11 @@ const QuizCard: React.FC<QuizCardProps> = ({
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-white shadow-md hover:bg-op-ocean hover:text-white'
           }`}
-          onClick={handleRemoveOptions}
+          onClick={() => {
+            if (!playerHelpers.removeOptions && selectedOption === null) {
+              onUseHelper('removeOptions');
+            }
+          }}
           disabled={playerHelpers.removeOptions || selectedOption !== null}
           whileHover={!playerHelpers.removeOptions && selectedOption === null ? { scale: 1.05 } : {}}
           whileTap={!playerHelpers.removeOptions && selectedOption === null ? { scale: 0.95 } : {}}

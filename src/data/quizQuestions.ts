@@ -1,4 +1,6 @@
 
+import { shuffleArray } from '../utils/quizHelpers';
+
 export interface QuizQuestion {
   id: number;
   question: string;
@@ -9,7 +11,7 @@ export interface QuizQuestion {
   hint: string;
 }
 
-// Sample questions - could be expanded
+// Expanded questions with proper difficulty categorization
 const quizQuestions: QuizQuestion[] = [
   // Easy Questions
   {
@@ -75,6 +77,60 @@ const quizQuestions: QuizQuestion[] = [
     difficulty: 'easy',
     hint: "في الإيست بلو حيث التقى شانكس"
   },
+  {
+    id: 22,
+    question: "ما هو لون شعر سانجي؟",
+    image: "https://sportshub.cbsistatic.com/i/2021/03/28/ea73e108-1b3b-4e07-a1d9-2469bd57b389/one-piece-sanji-wci-1184520.jpg",
+    options: ["أشقر", "أسود", "أخضر", "أحمر"],
+    correctAnswer: 0,
+    difficulty: 'easy',
+    hint: "يغطي عينه اليسرى دائماً"
+  },
+  {
+    id: 23,
+    question: "ما هو اسم سيف زورو المفضل؟",
+    image: "https://i.pinimg.com/originals/18/47/30/184730e481f8311687404bdf9a1e7feb.png",
+    options: ["وادو ايتشيمونجي", "ساندي كيتيتسو", "شوسوي", "إنما"],
+    correctAnswer: 0,
+    difficulty: 'easy',
+    hint: "كان يملكه كوينا في الماضي"
+  },
+  {
+    id: 24,
+    question: "ما هو حلم نامي في الحياة؟",
+    image: "https://cdn.oneesports.gg/cdn-data/2023/06/OnePiece_Nami_StrawHatPirate.jpg",
+    options: ["رسم خريطة للعالم كله", "جمع الكنوز", "إيجاد الون بيس", "أن تصبح قرصانة مشهورة"],
+    correctAnswer: 0,
+    difficulty: 'easy',
+    hint: "تحب الجغرافيا والملاحة"
+  },
+  {
+    id: 25,
+    question: "ما هو نوع حيوان شوبر؟",
+    image: "https://sportshub.cbsistatic.com/i/2022/06/17/45c866eb-48fc-40a6-9c36-b16e39bfda3b/one-piece-chopper.jpg",
+    options: ["أيل", "راكون", "قطة", "كلب"],
+    correctAnswer: 0,
+    difficulty: 'easy',
+    hint: "له أنف أزرق ويمكنه تناول فاكهة هيتو هيتو"
+  },
+  {
+    id: 26,
+    question: "ما اسم كابتن طاقم قراصنة قبعة القش؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/01/23b92-16428964579381-1920.jpg",
+    options: ["مونكي دي لوفي", "رورونوا زورو", "سانجي", "شانكس"],
+    correctAnswer: 0,
+    difficulty: 'easy',
+    hint: "يرتدي قبعة القش التي أعطاها له شانكس"
+  },
+  {
+    id: 27,
+    question: "ما هو اسم الدولة التي يحكمها فيفي؟",
+    image: "https://staticg.sportskeeda.com/editor/2021/05/8edef-16221558775178-800.jpg",
+    options: ["ألاباستا", "دريسروزا", "وانو", "سكاي بيا"],
+    correctAnswer: 0,
+    difficulty: 'easy',
+    hint: "دولة صحراوية قاتل فيها لوفي ضد كروكودايل"
+  },
   
   // Medium Questions
   {
@@ -139,6 +195,60 @@ const quizQuestions: QuizQuestion[] = [
     correctAnswer: 0,
     difficulty: 'medium',
     hint: "الملاحظة، التسليح، والملوك"
+  },
+  {
+    id: 28,
+    question: "من هو الشخص الذي علّم لوفي استخدام الهاكي؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-2b24e1cb3a10fa1ed9ee3c172c7c9d5b-lq",
+    options: ["سيلفرس رايلي", "شانكس", "جارب", "دراغون"],
+    correctAnswer: 0,
+    difficulty: 'medium',
+    hint: "كان نائب قائد طاقم روجر"
+  },
+  {
+    id: 29,
+    question: "ما هي قدرة فاكهة ترافلغار لو؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/09/7f80c-16639633005170-1920.jpg",
+    options: ["أوبي أوبي (العملية)", "جورا جورا (الزلزال)", "يامي يامي (الظلام)", "توري توري (الطيور)"],
+    correctAnswer: 0,
+    difficulty: 'medium',
+    hint: "تسمح له بإنشاء مجال يمكنه فيه التلاعب بكل شيء"
+  },
+  {
+    id: 30,
+    question: "ما هو اسم السفينة الأولى لطاقم قبعة القش؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-e2a8e2923ac642adf0bc3ea61c45db00",
+    options: ["جوينج ميري", "ثاوزند صني", "أورو جاكسون", "ريد فورس"],
+    correctAnswer: 0,
+    difficulty: 'medium',
+    hint: "أعطاها كايا لأصدقائها"
+  },
+  {
+    id: 31,
+    question: "ما هو اسم محاربي البحر السابقين الذين واجهوا لوفي في إنيس لوبي؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/09/d30a4-16633752047399-1920.jpg",
+    options: ["روب لوتشي", "كروكودايل", "جيكو موريا", "دوفلامينغو"],
+    correctAnswer: 0,
+    difficulty: 'medium',
+    hint: "كان قائد CP9"
+  },
+  {
+    id: 32,
+    question: "من هو أبو سانجي الحقيقي؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/07/c978c-16579371822841-1920.jpg",
+    options: ["فينسموك جادج", "ريد ليج زيف", "دون كريج", "أرلونج"],
+    correctAnswer: 0,
+    difficulty: 'medium',
+    hint: "قائد عائلة فينسموك وجيش جيرما 66"
+  },
+  {
+    id: 33,
+    question: "ما اسم التقنية التي طورها لوفي بعد تدريبه مع رايلي؟",
+    image: "https://staticg.sportskeeda.com/editor/2023/02/3fb8c-16764075404074-1920.jpg",
+    options: ["جير سكند", "ريد هوك", "غوم غوم نو ستورم", "إيليفانت غان"],
+    correctAnswer: 0,
+    difficulty: 'medium',
+    hint: "تستخدم الهاكي مع قدرات الغوم غوم"
   },
   
   // Hard Questions
@@ -209,7 +319,115 @@ const quizQuestions: QuizQuestion[] = [
     correctAnswer: 0,
     difficulty: 'hard',
     hint: "إله الشمس"
-  }
+  },
+  {
+    id: 34,
+    question: "ما الاسم الحقيقي لجزيرة العرش الفارغ؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-a3bf7f10bf7c2c7cf8da3ef9bc383a46-pjlq",
+    options: ["ماريجوا", "رافتيل", "أوهارا", "إلباف"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "مركز الحكومة العالمية"
+  },
+  {
+    id: 35,
+    question: "من هم القادة الخمسة للحكومة العالمية (الخمسة الحكماء)؟",
+    image: "https://staticg.sportskeeda.com/editor/2023/05/36e24-16835412456825-1920.jpg",
+    options: ["الأرستقراطيون العالميون", "الشيشيبوكاي", "الإمبراطورات", "الأدميرالات"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "يحملون أقنعة ويجلسون على رأس الحكومة العالمية"
+  },
+  {
+    id: 36,
+    question: "ما هو اسم الفاكهة التي أكلها كايدو؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/04/04b9c-16497908934530-1920.jpg",
+    options: ["فيش فيش: موديل أزرق (التنين)", "زوان-زوان: نموذج الديناصور", "ميرا ميرا (النار)", "بارا بارا (التقطيع)"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "تتيح له التحول إلى تنين أسطوري"
+  },
+  {
+    id: 37,
+    question: "من هو الشخص الذي أنقذ لوفي من ماجيلان في إمبل داون؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-7e3f2da6456c9bf26349c3d50a0b7adf-lq",
+    options: ["إيمبوريو إيفانكوف", "بون كلاي", "كروكودايل", "باغي"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "ثوري وملك أوكاما"
+  },
+  {
+    id: 38,
+    question: "ما اسم الخطة التي استخدمها دوفلامينغو للسيطرة على دريسروزا؟",
+    image: "https://staticg.sportskeeda.com/editor/2023/05/4c2b4-16842845934451-1920.jpg",
+    options: ["عملية SOP", "خطة النهاية العظمى", "مشروع SMILE", "خطة الصفقة"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "خطة لإسقاط عائلة ريكو الملكية"
+  },
+  {
+    id: 39,
+    question: "من هو الأخ الأكبر لموز؟",
+    image: "https://sportshub.cbsistatic.com/i/2021/03/25/ee8b3e83-fbed-4b99-8dd0-b43e31b03637/one-piece-katakuri-whole-cake-1165042.jpg",
+    options: ["شارلوت كاتاكوري", "شارلوت كراكر", "شارلوت سنودينج", "شارلوت داي فونجو"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "له فم غريب يخفيه تحت وشاحه"
+  },
+  {
+    id: 40,
+    question: "ما هو الاسم الحقيقي للمعلم (سنوكي) في وانو؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/04/c2f35-16508732824881-1920.jpg",
+    options: ["كوزوكي أودن", "كاواماتسو", "ياسوي", "موموسوكي"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "كان دايميو كوري ووالد موموسوكي"
+  },
+  {
+    id: 41,
+    question: "ما هو اسم السلاح القديم الذي تقول الأسطورة أنه موجود في ألاباستا؟",
+    image: "https://staticg.sportskeeda.com/editor/2023/01/98336-16728391862315-1920.jpg",
+    options: ["بلوتون", "أورانوس", "بوسايدون", "زيوس"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "سفينة حربية قديمة بقوة تدميرية هائلة"
+  },
+  {
+    id: 42,
+    question: "من هو الشخص الذي صنع سيف إنما لزورو؟",
+    image: "https://staticg.sportskeeda.com/editor/2022/08/bd4af-16594499311737-1920.jpg",
+    options: ["شيموتسوكي هيتتسوجي", "كوزابورو", "تينجو", "سكيبيكي"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "صانع سيوف شهير من وانو كان صديقًا لريوما"
+  },
+  {
+    id: 43,
+    question: "من هو العضو الوحيد من طاقم روجر الذي ظهر في أرك وانو؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-1c8ecd3f44d6e7a6599b0e3c7ff41c61-lq",
+    options: ["سكوبر غابان", "راي سيلفرز", "كرولوس", "أورز"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "كان الطباخ في سفينة روجر"
+  },
+  {
+    id: 44,
+    question: "من هو والد ريبيكا؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-b358b4d2b9d66d2d5e7e45a4c9ce8f96-lq",
+    options: ["كيروس/سولديرز", "دوفلامينغو", "ديامانتي", "فيرغو"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "كان جنديًا محولًا إلى لعبة"
+  },
+  {
+    id: 45,
+    question: "ما هو اسم السجن الذي كان محبوسًا فيه جينبي قبل انضمامه إلى طاقم قبعة القش؟",
+    image: "https://qph.cf2.quoracdn.net/main-qimg-4a8e1b8a6ae7e0c0dad0407f54e9d1b5-lq",
+    options: ["إمبل داون", "بانك هازارد", "إنيس لوبي", "ماري جويس"],
+    correctAnswer: 0,
+    difficulty: 'hard',
+    hint: "أخطر سجن في عالم ون بيس"
+  },
 ];
 
 export const getQuizQuestions = (difficulty: string, count: number = 10) => {
@@ -220,7 +438,7 @@ export const getQuizQuestions = (difficulty: string, count: number = 10) => {
   } else if (difficulty === 'hard') {
     filteredQuestions = quizQuestions.filter(q => q.difficulty === 'hard');
   } else {
-    // For medium, mix easy, medium, and hard questions
+    // For medium, mix easy, medium, and hard questions with proper distribution
     const easyQuestions = quizQuestions.filter(q => q.difficulty === 'easy').slice(0, Math.floor(count * 0.3));
     const mediumQuestions = quizQuestions.filter(q => q.difficulty === 'medium');
     const hardQuestions = quizQuestions.filter(q => q.difficulty === 'hard').slice(0, Math.floor(count * 0.2));
@@ -230,16 +448,6 @@ export const getQuizQuestions = (difficulty: string, count: number = 10) => {
   
   // Shuffle and limit questions
   return shuffleArray(filteredQuestions).slice(0, count);
-};
-
-// Fisher-Yates (Knuth) shuffle
-const shuffleArray = <T>(array: T[]): T[] => {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
 };
 
 export default quizQuestions;

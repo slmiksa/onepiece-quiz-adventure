@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, X, Check } from 'lucide-react';
 import { savePlayersToDb } from '../utils/supabaseHelpers';
 import { useToast } from "@/components/ui/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export interface Player {
   id: number;
@@ -15,7 +17,8 @@ interface PlayerSetupProps {
   onPlayersSubmit: (players: Player[], difficulty: string) => void;
 }
 
-const DEFAULT_AVATARS = [
+// One Piece character avatars
+const ONE_PIECE_AVATARS = [
   "https://i.pinimg.com/564x/c5/25/64/c52564e5004db2a86f023d9c12767433.jpg", // Luffy
   "https://i.pinimg.com/564x/9f/fd/55/9ffd55124dad5c22a8d16a80cbe0d8fb.jpg", // Zoro
   "https://i.pinimg.com/564x/b5/6a/8d/b56a8d537ca31d3fed6dd9ac249d5c9c.jpg", // Nami
@@ -39,10 +42,11 @@ const DEFAULT_AVATARS = [
 ];
 
 const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
-  const [players, setPlayers] = useState<Player[]>([{ id: 1, name: '', avatar: DEFAULT_AVATARS[0] }]);
+  const [players, setPlayers] = useState<Player[]>([{ id: 1, name: '', avatar: ONE_PIECE_AVATARS[0] }]);
   const [difficulty, setDifficulty] = useState('medium');
   const [errors, setErrors] = useState<{[key: number]: string}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAvatarSelector, setShowAvatarSelector] = useState<number | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -54,7 +58,7 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
       setPlayers([...players, { 
         id: newId, 
         name: '', 
-        avatar: DEFAULT_AVATARS[newId % DEFAULT_AVATARS.length] 
+        avatar: ONE_PIECE_AVATARS[Math.floor(Math.random() * ONE_PIECE_AVATARS.length)] 
       }]);
     }
   };
@@ -65,6 +69,10 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
       const newErrors = {...errors};
       delete newErrors[id];
       setErrors(newErrors);
+      
+      if (showAvatarSelector === id) {
+        setShowAvatarSelector(null);
+      }
     }
   };
   
@@ -84,6 +92,11 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
     setPlayers(players.map(player => 
       player.id === id ? { ...player, avatar } : player
     ));
+    setShowAvatarSelector(null);
+  };
+  
+  const toggleAvatarSelector = (id: number) => {
+    setShowAvatarSelector(showAvatarSelector === id ? null : id);
   };
   
   const validatePlayers = () => {
@@ -157,31 +170,53 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col md:flex-row items-center gap-4 bg-white bg-opacity-50 rounded-lg p-4"
+              className="flex flex-col md:flex-row items-center gap-4 bg-white bg-opacity-50 rounded-lg p-4 relative"
             >
               <div className="relative">
-                <img 
-                  src={player.avatar} 
-                  alt="Player Avatar" 
-                  className="w-16 h-16 rounded-full object-cover border-2 border-op-ocean"
-                />
-                <div className="absolute -bottom-2 -right-2">
-                  <div className="relative">
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const currentIndex = DEFAULT_AVATARS.indexOf(player.avatar);
-                        const nextIndex = (currentIndex + 1) % DEFAULT_AVATARS.length;
-                        selectAvatar(player.id, DEFAULT_AVATARS[nextIndex]);
-                      }}
-                      className="bg-op-yellow text-op-navy rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-op-straw transition-colors"
-                    >
+                <div onClick={() => toggleAvatarSelector(player.id)} className="cursor-pointer">
+                  <Avatar className="w-16 h-16 border-2 border-op-ocean">
+                    <AvatarImage src={player.avatar} alt="Player Avatar" className="object-cover" />
+                    <AvatarFallback className="bg-op-ocean text-white">
+                      {player.name.substring(0, 2) || "OP"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-2 -right-2">
+                    <div className="bg-op-yellow text-op-navy rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-op-straw transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8z" />
                       </svg>
-                    </button>
+                    </div>
                   </div>
                 </div>
+                
+                {showAvatarSelector === player.id && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute top-0 left-0 right-0 z-50 bg-white p-3 rounded-lg shadow-lg border border-gray-200 w-[280px] mt-20 md:mt-0"
+                  >
+                    <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto">
+                      {ONE_PIECE_AVATARS.map((avatar, index) => (
+                        <div 
+                          key={index}
+                          onClick={() => selectAvatar(player.id, avatar)}
+                          className={`w-12 h-12 rounded-full overflow-hidden cursor-pointer border-2 transition-all ${
+                            player.avatar === avatar ? 'border-op-ocean scale-110' : 'border-transparent hover:border-gray-300'
+                          }`}
+                        >
+                          <img src={avatar} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setShowAvatarSelector(null)}
+                      className="w-full mt-2 text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      إغلاق
+                    </button>
+                  </motion.div>
+                )}
               </div>
               
               <div className="flex-grow">

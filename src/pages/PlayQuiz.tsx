@@ -9,6 +9,7 @@ import { Player } from '../components/PlayerSetup';
 import { motion, AnimatePresence } from 'framer-motion';
 import { savePlayersToDb } from '../utils/supabaseHelpers';
 import { shuffleArray } from '../utils/quizHelpers';
+import { useToast } from "@/components/ui/use-toast";
 
 interface PlayerState {
   player: Player;
@@ -34,10 +35,10 @@ const PlayQuiz: React.FC = () => {
   const [dbPlayerIds, setDbPlayerIds] = useState<Record<number, string>>({});
   const [playerTransition, setPlayerTransition] = useState(false);
   const [nextPlayerName, setNextPlayerName] = useState('');
+  const [questionsPerPlayer, setQuestionsPerPlayer] = useState(10);
   
   const navigate = useNavigate();
-  
-  const questionsPerPlayer = 10;
+  const { toast } = useToast();
   
   // Initialize the game
   useEffect(() => {
@@ -58,16 +59,30 @@ const PlayQuiz: React.FC = () => {
         setDifficulty(difficultyValue);
         
         // Save players to database and get mapping of local IDs to DB IDs
-        const playerIdsMap = await savePlayersToDb(parsedPlayers);
-        setDbPlayerIds(playerIdsMap);
+        try {
+          const playerIdsMap = await savePlayersToDb(parsedPlayers);
+          setDbPlayerIds(playerIdsMap);
+        } catch (error) {
+          console.error('Error saving players to database:', error);
+          // Continue with game even if DB save fails
+        }
         
         // Get enough questions for all players
         const totalQuestionsNeeded = parsedPlayers.length * questionsPerPlayer;
-        const allQuestions = getQuizQuestions(difficultyValue, totalQuestionsNeeded);
+        let allQuestions = getQuizQuestions(difficultyValue, totalQuestionsNeeded * 2); // Get more questions to ensure we have enough unique ones
+        
+        // Make sure we have enough questions (at least questionsPerPlayer * number of players)
+        if (allQuestions.length < totalQuestionsNeeded) {
+          console.warn('Not enough questions available. Reducing questions per player.');
+          setQuestionsPerPlayer(Math.floor(allQuestions.length / parsedPlayers.length));
+        }
+        
+        // Always shuffle all questions to ensure randomness
+        allQuestions = shuffleArray(allQuestions);
         
         // Setup player states
         const playerStates: PlayerState[] = parsedPlayers.map((player, index) => {
-          // Get unique questions for this player
+          // Get unique questions for this player by taking from the shuffled array
           const startIndex = index * questionsPerPlayer;
           const playerQuestions = allQuestions.slice(startIndex, startIndex + questionsPerPlayer);
           
@@ -101,12 +116,17 @@ const PlayQuiz: React.FC = () => {
         
       } catch (error) {
         console.error('Error initializing game:', error);
+        toast({
+          title: "خطأ في تحميل اللعبة",
+          description: "حدث خطأ أثناء تهيئة اللعبة. سيتم إعادتك إلى الصفحة الرئيسية.",
+          variant: "destructive"
+        });
         navigate('/quiz');
       }
     };
     
     initializeGame();
-  }, [navigate]);
+  }, [navigate, questionsPerPlayer]);
   
   const currentPlayerState = players[currentPlayerIndex];
   
@@ -141,6 +161,13 @@ const PlayQuiz: React.FC = () => {
       
       // Move to next question
       currentPlayer.currentQuestionIndex += 1;
+      
+      // Reset helpers for next question
+      currentPlayer.helpers = {
+        removeOptions: false,
+        showHint: false,
+        changeQuestion: false
+      };
       
       updatedPlayers[currentPlayerIndex] = currentPlayer;
       return updatedPlayers;
@@ -185,12 +212,20 @@ const PlayQuiz: React.FC = () => {
       const currentPlayer = { ...updatedPlayers[currentPlayerIndex] };
       
       if (helper === 'changeQuestion') {
-        // Get a new question (simple implementation - just move to next question)
-        // In a real game, you'd want to replace with a different question
-        currentPlayer.currentQuestionIndex += 1;
+        // Get a new question
+        const nextIndex = currentPlayer.currentQuestionIndex + 1;
+        
+        // Check if we have more questions
+        if (nextIndex < currentPlayer.questions.length) {
+          currentPlayer.currentQuestionIndex = nextIndex;
+        } else {
+          // If we're out of questions, redirect to results
+          setGameOver(true);
+          return updatedPlayers;
+        }
       }
       
-      // Mark the helper as used
+      // Mark the helper as used for this question only
       currentPlayer.helpers = {
         ...currentPlayer.helpers,
         [helper]: true
@@ -301,9 +336,10 @@ const PlayQuiz: React.FC = () => {
     return (
       <Layout>
         <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
-          <div className="text-center text-white">
+          <div className="text-center text-white glass-card p-8">
             <h2 className="text-2xl mb-4">خطأ في تحميل السؤال</h2>
-            <button onClick={handlePlayAgain} className="btn-accent">
+            <p className="mb-6">لم نتمكن من تحميل السؤال التالي. يرجى المحاولة مرة أخرى.</p>
+            <button onClick={handlePlayAgain} className="bg-op-ocean text-white px-6 py-3 rounded-md hover:bg-op-blue transition">
               الرجوع للقائمة الرئيسية
             </button>
           </div>
