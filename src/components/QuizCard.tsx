@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Help, RefreshCcw, EyeOff } from 'lucide-react';
+import { HelpCircle, RefreshCcw, EyeOff } from 'lucide-react';
 import { QuizQuestion } from '../data/quizQuestions';
 import { Player } from './PlayerSetup';
 
@@ -33,17 +32,14 @@ const QuizCard: React.FC<QuizCardProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Options to be removed (always 2, and never the correct one)
   const getOptionsToRemove = () => {
     const incorrectOptions = question.options
       .map((_, index) => index)
       .filter(index => index !== question.correctAnswer);
     
-    // Shuffle and take two
     return shuffleArray(incorrectOptions).slice(0, 2);
   };
   
-  // Fisher-Yates (Knuth) shuffle
   const shuffleArray = <T,>(array: T[]): T[] => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -54,14 +50,12 @@ const QuizCard: React.FC<QuizCardProps> = ({
   };
   
   useEffect(() => {
-    // Reset state when question changes
     setSelectedOption(null);
     setTimeLeft(30);
     setHideOptions([]);
     setShowHint(false);
     setImageLoaded(false);
     
-    // Apply helpers if they've been used
     if (playerHelpers.removeOptions) {
       setHideOptions(getOptionsToRemove());
     }
@@ -70,7 +64,6 @@ const QuizCard: React.FC<QuizCardProps> = ({
       setShowHint(true);
     }
     
-    // Start timer
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -94,15 +87,12 @@ const QuizCard: React.FC<QuizCardProps> = ({
     
     setSelectedOption(index);
     
-    // Clear the timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
     
-    // Check if correct and call the callback
     const isCorrect = index === question.correctAnswer;
     
-    // Wait a bit before calling onAnswer to show the result
     setTimeout(() => {
       onAnswer(isCorrect);
     }, 1500);
@@ -243,7 +233,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
           whileHover={!playerHelpers.showHint && selectedOption === null ? { scale: 1.05 } : {}}
           whileTap={!playerHelpers.showHint && selectedOption === null ? { scale: 0.95 } : {}}
         >
-          <Help size={16} />
+          <HelpCircle size={16} />
           <span>تلميح</span>
         </motion.button>
         
