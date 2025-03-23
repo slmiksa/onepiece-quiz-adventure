@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -7,6 +8,7 @@ import { getQuizQuestions, QuizQuestion } from '../data/quizQuestions';
 import { Player } from '../components/PlayerSetup';
 import { motion, AnimatePresence } from 'framer-motion';
 import { savePlayersToDb } from '../utils/supabaseHelpers';
+import { shuffleArray } from '../utils/quizHelpers';
 
 interface PlayerState {
   player: Player;
@@ -30,6 +32,8 @@ const PlayQuiz: React.FC = () => {
   const [countdown, setCountdown] = useState(3);
   const [difficulty, setDifficulty] = useState('medium');
   const [dbPlayerIds, setDbPlayerIds] = useState<Record<number, string>>({});
+  const [playerTransition, setPlayerTransition] = useState(false);
+  const [nextPlayerName, setNextPlayerName] = useState('');
   
   const navigate = useNavigate();
   
@@ -106,6 +110,25 @@ const PlayQuiz: React.FC = () => {
   
   const currentPlayerState = players[currentPlayerIndex];
   
+  // Select next player randomly
+  const selectRandomNextPlayer = useCallback(() => {
+    if (players.length <= 1) return currentPlayerIndex;
+    
+    // Get eligible players (not all have finished their questions)
+    const eligiblePlayers = players.filter((player, index) => 
+      index !== currentPlayerIndex && player.currentQuestionIndex < questionsPerPlayer
+    );
+    
+    if (eligiblePlayers.length === 0) {
+      // If only current player left, continue with them
+      return currentPlayerIndex;
+    }
+    
+    // Pick random player from eligible players
+    const randomPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+    return players.findIndex(p => p.player.id === randomPlayer.player.id);
+  }, [players, currentPlayerIndex, questionsPerPlayer]);
+  
   const handleAnswer = useCallback((isCorrect: boolean) => {
     setPlayers(prevPlayers => {
       const updatedPlayers = [...prevPlayers];
@@ -126,27 +149,30 @@ const PlayQuiz: React.FC = () => {
     // Show transition between rounds
     setRoundTransition(true);
     setTimeout(() => {
-      // Check if current player has finished all questions
-      const currentPlayer = players[currentPlayerIndex];
-      const isLastQuestion = currentPlayer.currentQuestionIndex >= questionsPerPlayer - 1;
+      // Check if all players have finished their questions
+      const allPlayersFinished = players.every(p => 
+        p.currentQuestionIndex >= questionsPerPlayer - 1
+      );
       
-      if (isLastQuestion) {
-        // Check if all players have finished
-        const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
-        const allPlayersFinished = nextPlayerIndex === 0 && 
-          players.every(p => p.currentQuestionIndex >= questionsPerPlayer - 1);
+      if (allPlayersFinished) {
+        setGameOver(true);
+      } else {
+        // Select next player randomly
+        const nextPlayerIdx = selectRandomNextPlayer();
+        setNextPlayerName(players[nextPlayerIdx].player.name);
         
-        if (allPlayersFinished) {
-          setGameOver(true);
-        } else {
-          // Move to next player
-          setCurrentPlayerIndex(nextPlayerIndex);
-        }
+        // Show player transition
+        setPlayerTransition(true);
+        
+        setTimeout(() => {
+          setCurrentPlayerIndex(nextPlayerIdx);
+          setPlayerTransition(false);
+        }, 2000);
       }
       
       setRoundTransition(false);
     }, 1000);
-  }, [currentPlayerIndex, players]);
+  }, [currentPlayerIndex, players, selectRandomNextPlayer, questionsPerPlayer]);
   
   const handleTimeout = useCallback(() => {
     // Same logic as answering incorrectly
@@ -220,6 +246,26 @@ const PlayQuiz: React.FC = () => {
             className="h-32 w-32 rounded-full bg-op-yellow flex items-center justify-center shadow-lg"
           >
             <span className="font-adventure text-op-navy text-6xl">{countdown}</span>
+          </motion.div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  // Show player transition
+  if (playerTransition) {
+    return (
+      <Layout>
+        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="glass-card p-12 text-center"
+          >
+            <h2 className="text-4xl font-adventure text-white mb-4">دور اللاعب</h2>
+            <span className="text-5xl font-bold text-op-yellow">{nextPlayerName}</span>
           </motion.div>
         </div>
       </Layout>

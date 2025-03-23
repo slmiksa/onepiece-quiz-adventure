@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, RefreshCcw, EyeOff } from 'lucide-react';
 import { QuizQuestion } from '../data/quizQuestions';
 import { Player } from './PlayerSetup';
+import { shuffleArray } from '../utils/quizHelpers';
 
 interface QuizCardProps {
   question: QuizQuestion;
@@ -30,23 +31,23 @@ const QuizCard: React.FC<QuizCardProps> = ({
   const [hideOptions, setHideOptions] = useState<number[]>([]);
   const [showHint, setShowHint] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [randomizedOptions, setRandomizedOptions] = useState<{text: string, index: number}[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
-  const getOptionsToRemove = () => {
-    const incorrectOptions = question.options
-      .map((_, index) => index)
-      .filter(index => index !== question.correctAnswer);
-    
-    return shuffleArray(incorrectOptions).slice(0, 2);
-  };
+  useEffect(() => {
+    const options = question.options.map((option, index) => ({
+      text: option,
+      index: index
+    }));
+    setRandomizedOptions(shuffleArray(options));
+  }, [question]);
   
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
+  const getOptionsToRemove = () => {
+    const incorrectOptionIndices = randomizedOptions
+      .map((option, index) => option.index !== question.correctAnswer ? index : -1)
+      .filter(index => index !== -1);
+    
+    return shuffleArray(incorrectOptionIndices).slice(0, 2);
   };
   
   useEffect(() => {
@@ -56,7 +57,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
     setShowHint(false);
     setImageLoaded(false);
     
-    if (playerHelpers.removeOptions) {
+    if (playerHelpers.removeOptions && randomizedOptions.length > 0) {
       setHideOptions(getOptionsToRemove());
     }
     
@@ -80,9 +81,9 @@ const QuizCard: React.FC<QuizCardProps> = ({
         clearInterval(timerRef.current);
       }
     };
-  }, [question, playerHelpers]);
+  }, [question, playerHelpers, randomizedOptions]);
   
-  const handleOptionClick = (index: number) => {
+  const handleOptionClick = (index: number, originalIndex: number) => {
     if (selectedOption !== null || hideOptions.includes(index)) return;
     
     setSelectedOption(index);
@@ -91,7 +92,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
       clearInterval(timerRef.current);
     }
     
-    const isCorrect = index === question.correctAnswer;
+    const isCorrect = originalIndex === question.correctAnswer;
     
     setTimeout(() => {
       onAnswer(isCorrect);
@@ -99,7 +100,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   };
   
   const handleRemoveOptions = () => {
-    if (!playerHelpers.removeOptions) {
+    if (!playerHelpers.removeOptions && randomizedOptions.length > 0) {
       onUseHelper('removeOptions');
       setHideOptions(getOptionsToRemove());
     }
@@ -148,20 +149,18 @@ const QuizCard: React.FC<QuizCardProps> = ({
         </div>
       </div>
       
-      <div className="relative mb-8 bg-black bg-opacity-10 rounded-lg overflow-hidden flex justify-center items-center min-h-[250px]">
+      <div className="relative mb-8 bg-black bg-opacity-10 rounded-lg overflow-hidden flex justify-center items-center min-h-[250px] max-h-[350px]">
         {!imageLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-16 h-16 border-4 border-op-ocean border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
-        <motion.img 
+        <img 
           src={question.image} 
           alt="Question"
           className={`w-full h-auto max-h-[350px] object-contain ${imageLoaded ? '' : 'opacity-0'}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: imageLoaded ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
           onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(true)}
         />
       </div>
       
@@ -180,7 +179,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {question.options.map((option, index) => (
+        {randomizedOptions.map((option, index) => (
           <motion.button
             key={index}
             className={`p-4 rounded-lg text-right transition-all ${
@@ -189,19 +188,19 @@ const QuizCard: React.FC<QuizCardProps> = ({
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
                   : 'bg-white hover:bg-op-ocean hover:text-white'
                 : selectedOption === index
-                  ? index === question.correctAnswer
+                  ? option.index === question.correctAnswer
                     ? 'bg-green-500 text-white'
                     : 'bg-red-500 text-white'
-                  : index === question.correctAnswer && selectedOption !== null
+                  : option.index === question.correctAnswer && selectedOption !== null
                     ? 'bg-green-500 text-white'
                     : 'bg-white text-gray-500'
             }`}
-            onClick={() => handleOptionClick(index)}
+            onClick={() => handleOptionClick(index, option.index)}
             disabled={selectedOption !== null || hideOptions.includes(index)}
             whileHover={selectedOption === null && !hideOptions.includes(index) ? { scale: 1.02 } : {}}
             whileTap={selectedOption === null && !hideOptions.includes(index) ? { scale: 0.98 } : {}}
           >
-            {option}
+            {option.text}
           </motion.button>
         ))}
       </div>

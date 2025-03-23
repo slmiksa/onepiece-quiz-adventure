@@ -26,6 +26,16 @@ const DEFAULT_AVATARS = [
   "https://i.pinimg.com/564x/14/45/de/1445de0e6ca9a2adad21ca399bd13e17.jpg", // Brook
   "https://i.pinimg.com/564x/f9/28/7d/f9287de7bb14cfb94368f5b4e5f96c37.jpg", // Jinbe
   "https://i.pinimg.com/564x/ba/0c/0a/ba0c0a9c07170dd64b5e12fb3a591f18.jpg", // Ace
+  "https://i.pinimg.com/564x/0b/4c/a0/0b4ca0f36752d0a0a49e52be85eceb72.jpg", // Law
+  "https://i.pinimg.com/564x/a5/34/92/a53492052f6bff7a4caab9213d5d1d98.jpg", // Sabo
+  "https://i.pinimg.com/564x/6a/08/3d/6a083dfa6b5a15c9b25cc50fd134c9a5.jpg", // Shanks
+  "https://i.pinimg.com/564x/62/54/6a/62546ae93dcff6e2a055de9ed43d9438.jpg", // Buggy
+  "https://i.pinimg.com/564x/c7/78/40/c77840867fe01ed91e1b5b43c0a10ec6.jpg", // Usopp
+  "https://i.pinimg.com/564x/44/28/e5/4428e51548df84eac7a39a31eb078bb8.jpg", // Yamato
+  "https://i.pinimg.com/564x/48/66/95/4866957ccd5702e6021bf9d5cd7370fb.jpg", // Kaido
+  "https://i.pinimg.com/564x/73/20/3f/73203f5ef7c45ff0f1059e3173cad43c.jpg", // Big Mom
+  "https://i.pinimg.com/564x/38/4e/e8/384ee8dbb99f96e5bdd12ba063fa2dbd.jpg", // Whitebeard
+  "https://i.pinimg.com/564x/01/be/ae/01beaec9151f7a01aea877a55bb4b3e2.jpg", // Boa Hancock
 ];
 
 const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {

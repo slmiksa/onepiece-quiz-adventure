@@ -2,240 +2,314 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { motion } from 'framer-motion';
-import { CalendarIcon, Clock, Eye } from 'lucide-react';
+import { BookMarked, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 
-interface MangaNews {
+interface MangaItem {
   id: number;
   title: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  publishedAt: string;
-  readTime: number;
-  views: number;
+  cover: string;
+  episodeNumber: number;
+  releaseDate: string;
+  summary: string;
+  link: string;
 }
 
 const MangaNews: React.FC = () => {
-  const [news, setNews] = useState<MangaNews[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedNews, setSelectedNews] = useState<MangaNews | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Sample manga data
+  const mangaItems: MangaItem[] = [
+    {
+      id: 1,
+      title: 'لوفي يواجه كايدو في معركة حاسمة',
+      cover: 'https://images.unsplash.com/photo-1541562232579-512a21360020?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1084,
+      releaseDate: '2023-06-01',
+      summary: 'في الحلقة الجديدة، يواجه لوفي كايدو في معركة ملحمية ستحدد مصير وانو.',
+      link: '#'
+    },
+    {
+      id: 2,
+      title: 'ظهور شخصية جديدة تقلب موازين القوى',
+      cover: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1083,
+      releaseDate: '2023-05-25',
+      summary: 'ظهور مفاجئ لشخصية جديدة ذات قوى هائلة قد تغير مسار الأحداث بشكل كامل.',
+      link: '#'
+    },
+    {
+      id: 3,
+      title: 'سر الون بيس يقترب من الكشف',
+      cover: 'https://images.unsplash.com/photo-1553356084-58ef4a67b2a7?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1082,
+      releaseDate: '2023-05-18',
+      summary: 'تلميحات جديدة حول طبيعة كنز الون بيس وارتباطه بالقرن المفقود من التاريخ.',
+      link: '#'
+    },
+    {
+      id: 4,
+      title: 'زورو يتعلم تقنية جديدة',
+      cover: 'https://images.unsplash.com/photo-1614851099175-e5b30eb6f696?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1081,
+      releaseDate: '2023-05-11',
+      summary: 'زورو يتدرب على تقنية جديدة للسيوف قد تساعده في المعارك القادمة ضد أقوى خصومه.',
+      link: '#'
+    },
+    {
+      id: 5,
+      title: 'سانجي يكتشف أسرار عائلته',
+      cover: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1080,
+      releaseDate: '2023-05-04',
+      summary: 'سانجي يكتشف المزيد من أسرار عائلة فينسموك وقدراته الخاصة المخفية.',
+      link: '#'
+    },
+    {
+      id: 6,
+      title: 'معركة بحرية ضد قراصنة البيست',
+      cover: 'https://images.unsplash.com/photo-1502657877623-f66bf489d236?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1079,
+      releaseDate: '2023-04-27',
+      summary: 'قراصنة قبعة القش يواجهون قراصنة البيست في معركة بحرية مليئة بالمفاجآت.',
+      link: '#'
+    },
+    {
+      id: 7,
+      title: 'تحالف جديد بين القراصنة',
+      cover: 'https://images.unsplash.com/photo-1604537466608-109fa2f16c3b?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1078,
+      releaseDate: '2023-04-20',
+      summary: 'تحالفات جديدة تتشكل بين مجموعات القراصنة لمواجهة تهديد الحكومة العالمية.',
+      link: '#'
+    },
+    {
+      id: 8,
+      title: 'روبن تكشف نقوشاً قديمة',
+      cover: 'https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1077,
+      releaseDate: '2023-04-13',
+      summary: 'نيكو روبن تكتشف نقوشاً قديمة تحمل معلومات هامة عن سلاح أورانوس.',
+      link: '#'
+    },
+    {
+      id: 9,
+      title: 'وصول قراصنة قبعة القش إلى جزيرة جديدة',
+      cover: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1076,
+      releaseDate: '2023-04-06',
+      summary: 'الطاقم يصل إلى جزيرة غامضة تحكمها قوانين غريبة تتعلق بالجاذبية.',
+      link: '#'
+    },
+    {
+      id: 10,
+      title: 'فرانكي يخترع سلاحاً جديداً',
+      cover: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1075,
+      releaseDate: '2023-03-30',
+      summary: 'فرانكي يكمل اختراعاً جديداً سيحول سفينة ثاوزند صني إلى قوة هجومية رهيبة.',
+      link: '#'
+    },
+    {
+      id: 11,
+      title: 'نامي ترسم خريطة للعالم الجديد',
+      cover: 'https://images.unsplash.com/photo-1628626125033-7fb47f539063?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1074,
+      releaseDate: '2023-03-23',
+      summary: 'نامي تستخدم معلومات جديدة لرسم خريطة أكثر دقة لجزء من العالم الجديد.',
+      link: '#'
+    },
+    {
+      id: 12,
+      title: 'لقاء مع شانكس',
+      cover: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1073,
+      releaseDate: '2023-03-16',
+      summary: 'بعد سنوات من الانتظار، لوفي يلتقي مجدداً مع شانكس في ظروف غير متوقعة.',
+      link: '#'
+    },
+    {
+      id: 13,
+      title: 'بروك يكتشف قدرات روحية جديدة',
+      cover: 'https://images.unsplash.com/photo-1517960413843-0aee8e2b3285?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1072,
+      releaseDate: '2023-03-09',
+      summary: 'بروك يكتشف قدرات جديدة لقوة فاكهة الشيطان الخاصة به تمكنه من رؤية عالم الأرواح.',
+      link: '#'
+    },
+    {
+      id: 14,
+      title: 'جينبي يواجه قائد مجموعة السمك المرعب',
+      cover: 'https://images.unsplash.com/photo-1534766555764-ce878a5e3a2b?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1071,
+      releaseDate: '2023-03-02',
+      summary: 'جينبي يواجه قائد مجموعة السمك المرعب في قاع المحيط دفاعاً عن مملكة السمك.',
+      link: '#'
+    },
+    {
+      id: 15,
+      title: 'تطورات جديدة في قصة حرب ماربيلفورد',
+      cover: 'https://images.unsplash.com/photo-1591017403286-fd8493524e1e?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1070,
+      releaseDate: '2023-02-23',
+      summary: 'كشف تفاصيل جديدة عن أحداث حرب ماربيلفورد وتأثيرها على المشهد السياسي الحالي.',
+      link: '#'
+    },
+    {
+      id: 16,
+      title: 'تشوبر يطور دواءً سحرياً',
+      cover: 'https://images.unsplash.com/photo-1585096164465-656ea3f40e14?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1069,
+      releaseDate: '2023-02-16',
+      summary: 'تشوبر يطور دواءً يمكنه معالجة الآثار الجانبية لفاكهة الشيطان في ظروف معينة.',
+      link: '#'
+    },
+    {
+      id: 17,
+      title: 'الصراع بين البحرية والشيشيبوكاي',
+      cover: 'https://images.unsplash.com/photo-1619731079919-4c58e26b0599?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1068,
+      releaseDate: '2023-02-09',
+      summary: 'تفاصيل الصراع المستمر بين البحرية ومجموعة الشيشيبوكاي بعد حل النظام رسمياً.',
+      link: '#'
+    },
+    {
+      id: 18,
+      title: 'أوسوب يطور ذخيرة جديدة',
+      cover: 'https://images.unsplash.com/photo-1518965402144-3c35895286cf?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1067,
+      releaseDate: '2023-02-02',
+      summary: 'أوسوب يطور ذخيرة جديدة لمقلاعه بمساعدة النباتات الغريبة التي جمعها من جزيرة بوين.',
+      link: '#'
+    },
+    {
+      id: 19,
+      title: 'سر قوة الهاكي الملكي',
+      cover: 'https://images.unsplash.com/photo-1624562563808-276626a7bd8f?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1066,
+      releaseDate: '2023-01-26',
+      summary: 'معلومات جديدة عن قوة الهاكي الملكي وكيفية تطويره للوصول إلى مستويات غير مسبوقة.',
+      link: '#'
+    },
+    {
+      id: 20,
+      title: 'آخر التطورات في مؤتمر ريفيري',
+      cover: 'https://images.unsplash.com/photo-1579548122080-c35fd6820ecb?auto=format&fit=crop&w=800&q=80',
+      episodeNumber: 1065,
+      releaseDate: '2023-01-19',
+      summary: 'تفاصيل القرارات المصيرية التي اتخذت في مؤتمر ريفيري وتأثيرها على النظام العالمي.',
+      link: '#'
+    }
+  ];
   
   useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      setNews([
-        {
-          id: 1,
-          title: "الكشف عن تفاصيل جديدة حول أسرار الفاكهة المعجزة",
-          excerpt: "إيتشيرو أودا يكشف عن معلومات جديدة ومثيرة حول أصول وقوى الفاكهة المعجزة في العالم.",
-          content: "كشف إيتشيرو أودا، مبدع سلسلة ون بيس الشهيرة، في الفصل الأخير من المانجا عن تفاصيل جديدة ومثيرة حول أصول الفاكهة المعجزة وكيف تم صنعها في العالم. حيث أشار إلى أن الفاكهة المعجزة لها علاقة وطيدة بالقرن المفقود والحكومة العالمية. كما أوضح أودا أن هناك فئة سرية من الفاكهة لم يتم الكشف عنها بعد، وأنها قد تلعب دورًا محوريًا في الأحداث القادمة من القصة. وأضاف أن لوفي سيكتشف المزيد عن قوى فاكهة الجوم جوم التي تناولها، وكيف يمكن أن تتطور قدراته في المستقبل.\n\nوقد أثارت هذه التفاصيل الجديدة حماس المعجبين الذين طالما تساءلوا عن أصول وأسرار الفاكهة المعجزة في عالم ون بيس. ويُتوقع أن تكشف الفصول القادمة المزيد من الأسرار حول هذا الموضوع المثير.",
-          image: "https://m.media-amazon.com/images/I/91GSj25XyCL.jpg",
-          publishedAt: "2023-10-15",
-          readTime: 4,
-          views: 1245
-        },
-        {
-          id: 2,
-          title: "لوفي يواجه تحديًا جديدًا في مواجهة قراصنة لاف تيل",
-          excerpt: "المواجهة المرتقبة بين طاقم قبعة القش وقراصنة لاف تيل تتكشف في الفصول الأخيرة.",
-          content: "في التطورات الأخيرة من مانجا ون بيس، وصل طاقم قبعة القش أخيرًا إلى جزيرة لاف تيل المرموقة، حيث تنتظرهم مواجهة قوية مع قراصنة معروفين بقوتهم الهائلة. وقد أظهر الفصل الأخير لوفي وهو يستعد لمواجهة زعيم هؤلاء القراصنة في معركة قد تكون الأكثر إثارة في تاريخ السلسلة.\n\nويُظهر لوفي قدرات جديدة لفاكهة الجوم جوم، مما يشير إلى تطور كبير في قوته منذ أحداث وانو. كما أن بقية أفراد الطاقم يواجهون خصومهم الخاصين، مع تألق زورو وسانجي بشكل خاص في المعارك الجانبية.\n\nوتشير التوقعات إلى أن هذه المواجهة ستكشف أسرارًا مهمة حول تاريخ القرن المفقود والكنز العظيم ون بيس، مما قد يغير مسار القصة بشكل كبير.",
-          image: "https://www.thathashtagshow.com/wp-content/uploads/2023/05/One-Piece-1060-Monkey-D-Luffy-new-form.png",
-          publishedAt: "2023-09-28",
-          readTime: 5,
-          views: 2354
-        },
-        {
-          id: 3,
-          title: "الكشف عن تاريخ عائلة دي في أحدث أحداث ون بيس",
-          excerpt: "أودا يقدم معلومات جديدة عن عائلة D المرموقة وعلاقتها بالحكومة العالمية.",
-          content: "قدم الفصل الأخير من مانجا ون بيس معلومات مثيرة حول تاريخ عائلة D المرموقة وأهميتها في عالم ون بيس. حيث كشف أودا أن أفراد هذه العائلة لديهم صلة قوية بالقرن المفقود والمملكة القديمة، وأنهم كانوا يشكلون تهديدًا كبيرًا للحكومة العالمية منذ قرون.\n\nوتم الكشف أيضًا عن أن الحرف D في أسماء شخصيات مثل مونكي دي لوفي، وجول دي روجر، ومارشال دي تيتش، له معنى خاص وسري لم يُكشف عنه بالكامل بعد. كما أشارت الأحداث إلى وجود نبوءة قديمة مرتبطة بهذه العائلة وبمصير العالم.\n\nوقد أثارت هذه المعلومات الجديدة نظريات كثيرة بين المعجبين حول هوية الشخص الذي سيصبح ملك القراصنة، وماذا سيحدث عندما يتم اكتشاف الكنز العظيم ون بيس.",
-          image: "https://staticg.sportskeeda.com/editor/2023/04/0236c-16827026254925-1920.jpg",
-          publishedAt: "2023-08-12",
-          readTime: 6,
-          views: 3456
-        },
-        {
-          id: 4,
-          title: "شانكس يعود: عودة الشعر الأحمر إلى أحداث ون بيس",
-          excerpt: "عودة مفاجئة لشانكس ودوره المهم في الأحداث المقبلة من السلسلة.",
-          content: "فاجأ إيتشيرو أودا المعجبين بعودة مفاجئة وقوية لشانكس، قائد قراصنة الشعر الأحمر، إلى أحداث ون بيس بعد غياب طويل. وقد ظهر شانكس في موقف دراماتيكي حيث تدخل في صراع كبير بين القوى البحرية والقراصنة.\n\nوكشفت الأحداث الجديدة أن شانكس لديه معرفة واسعة بأسرار العالم وتاريخ القرن المفقود، وأنه يلعب دورًا أكبر بكثير مما كان يُعتقد سابقًا. كما أظهر قوة هائلة في استخدام هاكي الملوك، مما أذهل حتى أقوى الشخصيات في العالم.\n\nويُشير التطور الجديد إلى احتمالية لقاء قريب بين شانكس ولوفي، وهو اللقاء الذي ينتظره المعجبون منذ بداية السلسلة، حيث وعد لوفي بإعادة القبعة لشانكس عندما يصبح قرصانًا عظيمًا.",
-          image: "https://static1.cbrimages.com/wordpress/wp-content/uploads/2023/04/shanks-and-his-crew-in-one-piece.jpg",
-          publishedAt: "2023-07-20",
-          readTime: 3,
-          views: 4567
-        },
-        {
-          id: 5,
-          title: "أودا يؤكد: ون بيس تقترب من نهايتها",
-          excerpt: "مبدع ون بيس يؤكد أن السلسلة تقترب من نهايتها بعد أكثر من 25 عامًا من النشر.",
-          content: "في مقابلة حديثة، أكد إيتشيرو أودا، مبدع سلسلة ون بيس الشهيرة، أن المانجا تقترب من نهايتها بعد أكثر من 25 عامًا من النشر المستمر. وقال أودا إن القصة دخلت مرحلتها النهائية، وأنه يخطط لإنهاء السلسلة خلال السنوات القليلة القادمة.\n\nوأشار أودا إلى أنه سيكشف عن جميع الأسرار الكبرى في العالم، بما في ذلك حقيقة الكنز العظيم ون بيس، وتاريخ القرن المفقود، وهوية Joy Boy، وأصل الفاكهة المعجزة، وغيرها من الألغاز التي حيرت القراء لسنوات.\n\nوقد أثار هذا التصريح مشاعر مختلطة بين المعجبين، ما بين الحماس لمعرفة نهاية القصة والحزن على قرب انتهاء واحدة من أكثر سلاسل المانجا شهرة وتأثيرًا في التاريخ.",
-          image: "https://cdn.vox-cdn.com/thumbor/9KydVL-dzYXGWHYXPwcpF4CTRqQ=/0x0:1280x668/1200x800/filters:focal(538x232:742x436)/cdn.vox-cdn.com/uploads/chorus_image/image/71253617/Eiichiro_20Oda.6.jpg",
-          publishedAt: "2023-06-05",
-          readTime: 4,
-          views: 6789
-        }
-      ]);
-      setIsLoading(false);
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setLoading(false);
     }, 1000);
+    
+    return () => clearTimeout(timer);
   }, []);
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-  
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        duration: 0.5,
-        when: "beforeChildren",
-        staggerChildren: 0.15
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: { duration: 0.5, ease: "easeOut" }
-    }
-  };
   
   return (
     <Layout>
-      <div className="pt-24 pb-16 px-4 rtl">
-        <div className="container mx-auto">
+      <div className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-[#0a2756] to-[#071a38]">
+        <div className="container mx-auto px-4">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-12"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-adventure text-op-navy mb-4">أخبار المانجا</h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              اطلع على آخر أخبار وتطورات مانجا ون بيس وتابع أحدث الإصدارات والتحليلات
+            <h1 className="text-4xl md:text-5xl font-adventure text-white mb-4 drop-shadow-lg">
+              أخبار مانجا ون بيس
+            </h1>
+            <p className="text-lg text-white/80 max-w-2xl mx-auto">
+              آخر أخبار وإصدارات مانجا ون بيس مع تفاصيل الحلقات والتحديثات
             </p>
           </motion.div>
           
-          {isLoading ? (
+          {loading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="animate-bounce-slow h-16 w-16 rounded-full bg-op-yellow flex items-center justify-center">
-                <span className="font-adventure text-op-navy text-2xl">...</span>
-              </div>
-            </div>
-          ) : selectedNews ? (
-            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-soft-xl overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="relative">
-                  <img 
-                    src={selectedNews.image} 
-                    alt={selectedNews.title}
-                    className="w-full h-[300px] md:h-[400px] object-cover"
-                  />
-                  <button 
-                    onClick={() => setSelectedNews(null)}
-                    className="absolute top-4 right-4 bg-white bg-opacity-80 rounded-full p-2 shadow-md hover:bg-opacity-100 transition-all"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-op-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <div className="p-6 md:p-8">
-                  <div className="flex items-center text-sm text-gray-500 mb-4 space-x-4 rtl:space-x-reverse">
-                    <div className="flex items-center">
-                      <CalendarIcon className="h-4 w-4 ml-1" />
-                      <span>{formatDate(selectedNews.publishedAt)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 ml-1" />
-                      <span>{selectedNews.readTime} دقائق للقراءة</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Eye className="h-4 w-4 ml-1" />
-                      <span>{selectedNews.views}</span>
-                    </div>
-                  </div>
-                  
-                  <h2 className="text-2xl md:text-3xl font-bold text-op-navy mb-4">
-                    {selectedNews.title}
-                  </h2>
-                  
-                  <div className="text-gray-700 leading-relaxed text-lg space-y-4">
-                    {selectedNews.content.split('\n\n').map((paragraph, index) => (
-                      <p key={index}>{paragraph}</p>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
+              <div className="animate-spin h-12 w-12 border-4 border-op-yellow border-t-transparent rounded-full"></div>
             </div>
           ) : (
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {news.map((item) => (
-                <motion.div 
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 rtl">
+              {mangaItems.map((item, index) => (
+                <motion.article
                   key={item.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
-                  variants={itemVariants}
-                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                  onClick={() => setSelectedNews(item)}
+                  className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all border border-white/10"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.5 }}
                 >
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative overflow-hidden h-48">
                     <img 
-                      src={item.image} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      src={item.cover} 
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://images.unsplash.com/photo-1642278189161-c512348ce9f9?auto=format&fit=crop&w=800&q=80";
+                      }}
                     />
+                    <div className="absolute top-3 right-3 bg-op-yellow text-op-navy font-bold px-3 py-1 rounded-full text-sm">
+                      حلقة {item.episodeNumber}
+                    </div>
                   </div>
                   
                   <div className="p-5">
-                    <div className="flex items-center text-xs text-gray-500 mb-2">
-                      <CalendarIcon className="h-3 w-3 ml-1" />
-                      <span>{formatDate(item.publishedAt)}</span>
-                      <span className="mx-2">•</span>
-                      <Clock className="h-3 w-3 ml-1" />
-                      <span>{item.readTime} دقائق للقراءة</span>
+                    <h2 className="text-xl font-bold text-white mb-2 line-clamp-1">{item.title}</h2>
+                    
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center">
+                        <BookMarked size={16} className="text-op-yellow mr-1" />
+                        <span className="text-white/70 text-sm">
+                          {new Date(item.releaseDate).toLocaleDateString('ar-SA')}
+                        </span>
+                      </div>
                     </div>
                     
-                    <h3 className="text-xl font-bold text-op-navy mb-2 line-clamp-2">
-                      {item.title}
-                    </h3>
-                    
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {item.excerpt}
+                    <p className="text-white/60 mb-4 text-sm line-clamp-3">
+                      {item.summary}
                     </p>
                     
-                    <button 
-                      className="text-op-ocean font-medium hover:text-op-blue transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedNews(item);
-                      }}
+                    <a 
+                      href={item.link} 
+                      className="inline-flex items-center space-x-1 rtl:space-x-reverse text-op-yellow hover:text-op-straw"
                     >
-                      قراءة المزيد
-                    </button>
+                      <span>قراءة المزيد</span>
+                      <ExternalLink size={14} />
+                    </a>
                   </div>
-                </motion.div>
+                </motion.article>
               ))}
-            </motion.div>
+            </div>
           )}
+          
+          <div className="flex justify-center mt-12">
+            <nav className="flex items-center space-x-2 rtl:space-x-reverse">
+              <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-50">
+                <ChevronRight className="h-5 w-5" />
+              </button>
+              
+              {[1, 2, 3].map(page => (
+                <button 
+                  key={page}
+                  className={`h-8 w-8 flex items-center justify-center rounded-full ${
+                    page === 1 
+                      ? 'bg-op-yellow text-op-navy' 
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
     </Layout>
