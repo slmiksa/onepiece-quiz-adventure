@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -25,29 +26,43 @@ const AuthForm: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (mode === AuthMode.ADMIN) {
-        // Admin login with only username/password
-        if (adminUsername === 'admin' && adminPassword === 'admin') {
-          // Direct admin login without using Supabase auth
-          toast({
-            title: 'تم تسجيل دخول المسؤول بنجاح',
-            description: 'مرحبًا بك في لوحة التحكم',
-          });
+      // Simple admin credentials check - no email required
+      if (adminUsername === 'admin' && adminPassword === 'admin') {
+        toast({
+          title: 'تم تسجيل دخول المسؤول بنجاح',
+          description: 'مرحبًا بك في لوحة التحكم',
+        });
 
-          // Store admin status in localStorage
-          localStorage.setItem('isAdmin', 'true');
-          
-          navigate('/admin');
-          return;
-        } else {
-          throw new Error('بيانات المسؤول غير صحيحة');
-        }
-      } else if (mode === AuthMode.SIGN_UP) {
+        // Store admin status in localStorage
+        localStorage.setItem('isAdmin', 'true');
+        
+        navigate('/admin');
+      } else {
+        throw new Error('بيانات المسؤول غير صحيحة');
+      }
+    } catch (error: any) {
+      console.error('Admin login error:', error);
+      toast({
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ أثناء تسجيل دخول المسؤول',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (mode === AuthMode.SIGN_UP) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -126,7 +141,7 @@ const AuthForm: React.FC = () => {
         </TabsList>
         
         <TabsContent value="sign_in">
-          <form onSubmit={handleSubmit} className="space-y-4 rtl">
+          <form onSubmit={handleUserSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white">البريد الإلكتروني</Label>
               <Input
@@ -164,7 +179,7 @@ const AuthForm: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="sign_up">
-          <form onSubmit={handleSubmit} className="space-y-4 rtl">
+          <form onSubmit={handleUserSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
               <Label htmlFor="username" className="text-white">اسم المستخدم</Label>
               <Input
@@ -215,7 +230,7 @@ const AuthForm: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="admin">
-          <form onSubmit={handleSubmit} className="space-y-4 rtl">
+          <form onSubmit={handleAdminSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
               <Label htmlFor="admin-username" className="text-white">اسم المستخدم</Label>
               <Input

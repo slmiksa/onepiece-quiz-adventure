@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -16,10 +15,15 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (isAuthenticated && user) {
-        const adminStatus = await isUserAdmin();
+      const adminStatus = localStorage.getItem('isAdmin') === 'true';
+      
+      if (!adminStatus && isAuthenticated && user) {
+        const supabaseAdminStatus = await isUserAdmin();
+        setIsAdmin(supabaseAdminStatus);
+      } else {
         setIsAdmin(adminStatus);
       }
+      
       setAdminCheckLoading(false);
     };
 
@@ -34,12 +38,8 @@ const AdminLayout: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return (
@@ -121,7 +121,10 @@ const AdminLayout: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 className="text-xs"
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  localStorage.removeItem('isAdmin');
+                  navigate('/');
+                }}
               >
                 العودة للموقع
               </Button>
