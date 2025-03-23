@@ -234,7 +234,7 @@ export const getRoomById = async (roomId: string): Promise<DbRoom | null> => {
       return null;
     }
     
-    return data;
+    return data as DbRoom;
   } catch (err) {
     console.error('Exception fetching room:', err);
     return null;
@@ -327,7 +327,7 @@ export const startGame = async (roomId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('rooms')
-      .update({ status: 'playing' })
+      .update({ status: 'playing' as const })
       .eq('id', roomId);
     
     if (error) {

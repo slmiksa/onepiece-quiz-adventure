@@ -23,7 +23,7 @@ interface Room {
   name: string;
   owner_id: string;
   difficulty: string;
-  status: string;
+  status: 'waiting' | 'playing' | 'finished';
 }
 
 interface RoomPlayersProps {
@@ -55,7 +55,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         
       if (roomError) throw roomError;
       
-      setRoom(roomData);
+      setRoom(roomData as Room);
       
       // Get players with user details
       const { data: playersData, error: playersError } = await supabase
@@ -126,11 +126,13 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           filter: `id=eq.${roomId}`,
         },
         (payload) => {
-          setRoom(payload.new as Room);
-          
-          // If room status changed to 'playing', trigger onGameStart
-          if (payload.new.status === 'playing') {
-            onGameStart();
+          if (payload.new && typeof payload.new === 'object' && 'status' in payload.new) {
+            setRoom(payload.new as Room);
+            
+            // If room status changed to 'playing', trigger onGameStart
+            if (payload.new.status === 'playing') {
+              onGameStart();
+            }
           }
         }
       )
