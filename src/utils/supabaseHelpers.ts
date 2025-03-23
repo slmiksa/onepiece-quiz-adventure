@@ -1,6 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "../components/PlayerSetup";
 import { generateId } from "./quizHelpers";
+import { Json } from "@/integrations/supabase/types";
 
 // Types for database tables
 export interface DbPlayer {
@@ -101,7 +103,7 @@ export interface DbQuestion {
   created_by?: string;
 }
 
-interface QuestionOption {
+export interface QuestionOption {
   id: string;
   text: string;
 }
@@ -776,7 +778,7 @@ export const createQuestion = async (
       .from('questions')
       .insert({
         question,
-        options,
+        options: options as unknown as Json,
         correct_answer: correctAnswer,
         difficulty,
         category,
@@ -790,7 +792,10 @@ export const createQuestion = async (
       return null;
     }
     
-    return data;
+    return {
+      ...data,
+      options: data.options as unknown as QuestionOption[]
+    } as DbQuestion;
   } catch (err) {
     console.error('Exception creating question:', err);
     return null;
@@ -822,7 +827,10 @@ export const getQuestions = async (
       return [];
     }
     
-    return data || [];
+    return data.map(item => ({
+      ...item,
+      options: item.options as unknown as QuestionOption[]
+    })) as DbQuestion[];
   } catch (err) {
     console.error('Exception fetching questions:', err);
     return [];
@@ -834,9 +842,16 @@ export const updateQuestion = async (
   updates: Partial<Pick<DbQuestion, 'question' | 'options' | 'correct_answer' | 'difficulty' | 'category'>>
 ): Promise<boolean> => {
   try {
+    const updatedData = { ...updates };
+    
+    // Convert options to Json if it exists in the updates
+    if (updates.options) {
+      updatedData.options = updates.options as unknown as Json;
+    }
+    
     const { error } = await supabase
       .from('questions')
-      .update(updates)
+      .update(updatedData)
       .eq('id', id);
     
     if (error) {

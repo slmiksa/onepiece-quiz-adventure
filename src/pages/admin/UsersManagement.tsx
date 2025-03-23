@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Calendar, MoreHorizontal, Shield, User, UserCog } from 'lucide-react';
+import { Calendar, MoreHorizontal, Shield, User, UserCog, Users } from 'lucide-react';
 import { getAllUsers, updateUserRole, DbUser } from '@/utils/supabaseHelpers';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
