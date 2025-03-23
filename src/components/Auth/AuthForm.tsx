@@ -31,21 +31,17 @@ const AuthForm: React.FC = () => {
 
     try {
       if (mode === AuthMode.ADMIN) {
-        // Special admin login with username/password
+        // Admin login with only username/password
         if (adminUsername === 'admin' && adminPassword === 'admin') {
-          // Admin login - using a special email for the admin account
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: 'admin@onepiece-quiz.com', // This admin email must exist in your Supabase project
-            password: 'admin',
-          });
-
-          if (error) throw error;
-
+          // Direct admin login without using Supabase auth
           toast({
             title: 'تم تسجيل دخول المسؤول بنجاح',
             description: 'مرحبًا بك في لوحة التحكم',
           });
 
+          // Store admin status in localStorage
+          localStorage.setItem('isAdmin', 'true');
+          
           navigate('/admin');
           return;
         } else {
