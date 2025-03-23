@@ -17,6 +17,11 @@ interface QuizCardProps {
     showHint: boolean;
     changeQuestion: boolean;
   };
+  usedHelpers: {
+    removeOptions: boolean;
+    showHint: boolean;
+    changeQuestion: boolean;
+  };
   onUseHelper: (helper: 'removeOptions' | 'showHint' | 'changeQuestion') => void;
 }
 
@@ -26,6 +31,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   onTimeout,
   currentPlayer,
   playerHelpers,
+  usedHelpers,
   onUseHelper
 }) => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -213,18 +219,18 @@ const QuizCard: React.FC<QuizCardProps> = ({
       <div className="flex justify-center space-x-4 rtl:space-x-reverse">
         <motion.button
           className={`p-3 rounded-md flex items-center space-x-1 rtl:space-x-reverse ${
-            playerHelpers.removeOptions
+            usedHelpers.removeOptions
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-white shadow-md hover:bg-op-ocean hover:text-white'
           }`}
           onClick={() => {
-            if (!playerHelpers.removeOptions && selectedOption === null) {
+            if (!usedHelpers.removeOptions && selectedOption === null) {
               onUseHelper('removeOptions');
             }
           }}
-          disabled={playerHelpers.removeOptions || selectedOption !== null}
-          whileHover={!playerHelpers.removeOptions && selectedOption === null ? { scale: 1.05 } : {}}
-          whileTap={!playerHelpers.removeOptions && selectedOption === null ? { scale: 0.95 } : {}}
+          disabled={usedHelpers.removeOptions || selectedOption !== null}
+          whileHover={!usedHelpers.removeOptions && selectedOption === null ? { scale: 1.05 } : {}}
+          whileTap={!usedHelpers.removeOptions && selectedOption === null ? { scale: 0.95 } : {}}
         >
           <EyeOff size={16} />
           <span>حذف خيارين</span>
@@ -232,18 +238,18 @@ const QuizCard: React.FC<QuizCardProps> = ({
         
         <motion.button
           className={`p-3 rounded-md flex items-center space-x-1 rtl:space-x-reverse ${
-            playerHelpers.showHint
+            usedHelpers.showHint
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-white shadow-md hover:bg-op-ocean hover:text-white'
           }`}
           onClick={() => {
-            if (!playerHelpers.showHint && selectedOption === null) {
+            if (!usedHelpers.showHint && selectedOption === null) {
               onUseHelper('showHint');
             }
           }}
-          disabled={playerHelpers.showHint || selectedOption !== null}
-          whileHover={!playerHelpers.showHint && selectedOption === null ? { scale: 1.05 } : {}}
-          whileTap={!playerHelpers.showHint && selectedOption === null ? { scale: 0.95 } : {}}
+          disabled={usedHelpers.showHint || selectedOption !== null}
+          whileHover={!usedHelpers.showHint && selectedOption === null ? { scale: 1.05 } : {}}
+          whileTap={!usedHelpers.showHint && selectedOption === null ? { scale: 0.95 } : {}}
         >
           <HelpCircle size={16} />
           <span>تلميح</span>
@@ -251,18 +257,18 @@ const QuizCard: React.FC<QuizCardProps> = ({
         
         <motion.button
           className={`p-3 rounded-md flex items-center space-x-1 rtl:space-x-reverse ${
-            playerHelpers.changeQuestion
+            usedHelpers.changeQuestion
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-white shadow-md hover:bg-op-ocean hover:text-white'
           }`}
           onClick={() => {
-            if (!playerHelpers.changeQuestion && selectedOption === null) {
+            if (!usedHelpers.changeQuestion && selectedOption === null) {
               onUseHelper('changeQuestion');
             }
           }}
-          disabled={playerHelpers.changeQuestion || selectedOption !== null}
-          whileHover={!playerHelpers.changeQuestion && selectedOption === null ? { scale: 1.05 } : {}}
-          whileTap={!playerHelpers.changeQuestion && selectedOption === null ? { scale: 0.95 } : {}}
+          disabled={usedHelpers.changeQuestion || selectedOption !== null}
+          whileHover={!usedHelpers.changeQuestion && selectedOption === null ? { scale: 1.05 } : {}}
+          whileTap={!usedHelpers.changeQuestion && selectedOption === null ? { scale: 0.95 } : {}}
         >
           <RefreshCcw size={16} />
           <span>تغيير السؤال</span>

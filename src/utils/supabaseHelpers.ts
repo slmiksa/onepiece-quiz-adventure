@@ -20,6 +20,14 @@ export interface DbQuizResult {
   created_at?: string;
 }
 
+export interface SharedQuiz {
+  id: string;
+  players: Player[];
+  difficulty: string;
+  created_at?: string;
+  status: 'waiting' | 'playing' | 'finished';
+}
+
 // Save player to database
 export const savePlayerToDb = async (player: Player): Promise<DbPlayer | null> => {
   try {
@@ -115,5 +123,66 @@ export const getTopScores = async (limit: number = 10): Promise<DbQuizResult[]> 
   } catch (err) {
     console.error('Exception fetching top scores:', err);
     return [];
+  }
+};
+
+// Create a shared quiz
+export const createSharedQuiz = async (players: Player[], difficulty: string): Promise<string | null> => {
+  try {
+    // Generate a short random ID for the quiz
+    const quizId = generateId(6);
+    
+    // Store the shared quiz in localStorage for now (in a real app, use Supabase Realtime)
+    const sharedQuiz: SharedQuiz = {
+      id: quizId,
+      players,
+      difficulty,
+      status: 'waiting'
+    };
+    
+    localStorage.setItem(`quiz_${quizId}`, JSON.stringify(sharedQuiz));
+    
+    return quizId;
+  } catch (err) {
+    console.error('Exception creating shared quiz:', err);
+    return null;
+  }
+};
+
+// Get a shared quiz
+export const getSharedQuiz = async (quizId: string): Promise<SharedQuiz | null> => {
+  try {
+    const quizData = localStorage.getItem(`quiz_${quizId}`);
+    if (!quizData) return null;
+    
+    return JSON.parse(quizData) as SharedQuiz;
+  } catch (err) {
+    console.error('Exception getting shared quiz:', err);
+    return null;
+  }
+};
+
+// Join a shared quiz
+export const joinSharedQuiz = async (quizId: string, player: Player): Promise<boolean> => {
+  try {
+    const sharedQuiz = await getSharedQuiz(quizId);
+    if (!sharedQuiz) return false;
+    
+    // Check if we already have 4 players
+    if (sharedQuiz.players.length >= 4) return false;
+    
+    // Add the new player
+    sharedQuiz.players.push({
+      ...player,
+      id: sharedQuiz.players.length + 1
+    });
+    
+    // Update the quiz in localStorage
+    localStorage.setItem(`quiz_${quizId}`, JSON.stringify(sharedQuiz));
+    
+    return true;
+  } catch (err) {
+    console.error('Exception joining shared quiz:', err);
+    return false;
   }
 };

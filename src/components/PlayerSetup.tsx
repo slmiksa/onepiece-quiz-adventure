@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -16,24 +17,10 @@ interface PlayerSetupProps {
   onPlayersSubmit: (players: Player[], difficulty: string) => void;
 }
 
-// One Piece character avatars - updated with new valid URLs
+// Simplified One Piece character avatars - just one male and one female
 const ONE_PIECE_AVATARS = [
-  "/lovable-uploads/d81711f8-c3d9-4fea-b0b8-64f9842485ba.png",
-  "https://i.imgur.com/nRYMBl4.png", // Luffy
-  "https://i.imgur.com/qZT9Jt9.png", // Zoro
-  "https://i.imgur.com/UiRzQJ4.png", // Nami
-  "https://i.imgur.com/FIejeh7.png", // Sanji
-  "https://i.imgur.com/P43J94a.png", // Chopper
-  "https://i.imgur.com/T5gkMlM.png", // Robin
-  "https://i.imgur.com/lPSVJnY.png", // Franky
-  "https://i.imgur.com/SNSFIxm.png", // Brook
-  "https://i.imgur.com/7vN6vbH.png", // Jinbe
-  "https://i.imgur.com/ZIcUIKd.png", // Ace
-  "https://i.imgur.com/nEQsG8G.png", // Law
-  "https://i.imgur.com/1OhNPBz.png", // Sabo
-  "https://i.imgur.com/aX9QBl0.png", // Shanks
-  "https://i.imgur.com/jWrJjAs.png", // Buggy
-  "https://i.imgur.com/XfdvY74.png", // Usopp
+  "https://i.imgur.com/nRYMBl4.png", // Luffy (male)
+  "https://i.imgur.com/UiRzQJ4.png", // Nami (female)
 ];
 
 const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
@@ -192,20 +179,20 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute top-0 left-0 right-0 z-50 bg-white p-3 rounded-lg shadow-lg border border-gray-200 w-[280px] mt-20 md:mt-0"
+                    className="absolute top-0 left-0 right-0 z-50 bg-white p-3 rounded-lg shadow-lg border border-gray-200 w-[150px] mt-20 md:mt-0"
                   >
-                    <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto">
+                    <div className="flex justify-center gap-2">
                       {ONE_PIECE_AVATARS.map((avatar, index) => (
                         <div 
                           key={index}
                           onClick={() => selectAvatar(player.id, avatar)}
-                          className={`w-12 h-12 rounded-full overflow-hidden cursor-pointer border-2 transition-all ${
+                          className={`w-16 h-16 rounded-full overflow-hidden cursor-pointer border-2 transition-all ${
                             player.avatar === avatar ? 'border-op-ocean scale-110' : 'border-transparent hover:border-gray-300'
                           }`}
                         >
                           <img 
                             src={avatar} 
-                            alt={`Avatar ${index + 1}`} 
+                            alt={index === 0 ? 'شخصية ذكر' : 'شخصية أنثى'} 
                             className="w-full h-full object-cover"
                             loading="lazy"
                             onError={(e) => {
@@ -344,4 +331,3 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ onPlayersSubmit }) => {
 };
 
 export default PlayerSetup;
-

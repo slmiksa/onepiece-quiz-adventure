@@ -1,15 +1,15 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import QuizCard from '../components/QuizCard';
 import ResultsScreen from '../components/ResultsScreen';
 import { getQuizQuestions, QuizQuestion } from '../data/quizQuestions';
 import { Player } from '../components/PlayerSetup';
 import { motion, AnimatePresence } from 'framer-motion';
-import { savePlayersToDb } from '../utils/supabaseHelpers';
+import { savePlayersToDb, getSharedQuiz, createSharedQuiz } from '../utils/supabaseHelpers';
 import { shuffleArray } from '../utils/quizHelpers';
 import { useToast } from "@/components/ui/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface PlayerState {
   player: Player;
@@ -25,10 +25,11 @@ interface PlayerState {
     removeOptions: boolean;
     showHint: boolean;
     changeQuestion: boolean;
-  }; // Track used helpers across all questions
+  };
 }
 
 const PlayQuiz: React.FC = () => {
+  const { quizId } = useParams<{ quizId: string }>();
   const [players, setPlayers] = useState<PlayerState[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,20 +42,97 @@ const PlayQuiz: React.FC = () => {
   const [playerTransition, setPlayerTransition] = useState(false);
   const [nextPlayerName, setNextPlayerName] = useState('');
   const [questionsPerPlayer, setQuestionsPerPlayer] = useState(10);
+  const [isSharedQuiz, setIsSharedQuiz] = useState(false);
+  const [waitingForPlayers, setWaitingForPlayers] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Initialize the game
   useEffect(() => {
     const initializeGame = async () => {
       try {
-        // Get players and difficulty from sessionStorage
+        if (quizId) {
+          setIsSharedQuiz(true);
+          const sharedQuiz = await getSharedQuiz(quizId);
+          
+          if (!sharedQuiz) {
+            toast({
+              title: "المسابقة غير موجودة",
+              description: "لم نتمكن من العثور على هذه المسابقة المشتركة",
+              variant: "destructive"
+            });
+            navigate('/quiz');
+            return;
+          }
+          
+          setDifficulty(sharedQuiz.difficulty);
+          
+          if (sharedQuiz.players && sharedQuiz.players.length > 0) {
+            const parsedPlayers = sharedQuiz.players;
+            
+            try {
+              const playerIdsMap = await savePlayersToDb(parsedPlayers);
+              setDbPlayerIds(playerIdsMap);
+            } catch (error) {
+              console.error('Error saving players to database:', error);
+            }
+            
+            const totalQuestionsNeeded = parsedPlayers.length * questionsPerPlayer;
+            let allQuestions = getQuizQuestions(sharedQuiz.difficulty, Math.max(totalQuestionsNeeded * 2, 100));
+            
+            if (allQuestions.length < totalQuestionsNeeded) {
+              setQuestionsPerPlayer(Math.floor(allQuestions.length / parsedPlayers.length));
+            }
+            
+            allQuestions = shuffleArray(allQuestions);
+            
+            const playerStates = parsedPlayers.map((player, index) => {
+              const startIndex = index * questionsPerPlayer;
+              const playerQuestions = allQuestions.slice(startIndex, startIndex + questionsPerPlayer);
+              
+              return {
+                player,
+                score: 0,
+                currentQuestionIndex: 0,
+                helpers: {
+                  removeOptions: false,
+                  showHint: false,
+                  changeQuestion: false
+                },
+                questions: playerQuestions,
+                usedHelpers: {
+                  removeOptions: false,
+                  showHint: false,
+                  changeQuestion: false
+                }
+              };
+            });
+            
+            setPlayers(playerStates);
+            setIsLoading(false);
+            
+            setShowCountdown(true);
+            let count = 3;
+            const countdownInterval = setInterval(() => {
+              count--;
+              setCountdown(count);
+              if (count <= 0) {
+                clearInterval(countdownInterval);
+                setShowCountdown(false);
+              }
+            }, 1000);
+          } else {
+            setWaitingForPlayers(true);
+            setIsLoading(false);
+          }
+          
+          return;
+        }
+        
         const storedPlayers = sessionStorage.getItem('quizPlayers');
         const storedDifficulty = sessionStorage.getItem('quizDifficulty');
         
         if (!storedPlayers || !storedDifficulty) {
-          // If not found, redirect back to setup
           navigate('/quiz');
           return;
         }
@@ -63,31 +141,35 @@ const PlayQuiz: React.FC = () => {
         const difficultyValue = storedDifficulty;
         setDifficulty(difficultyValue);
         
-        // Save players to database and get mapping of local IDs to DB IDs
+        try {
+          const sharedQuizId = await createSharedQuiz(parsedPlayers, difficultyValue);
+          if (sharedQuizId) {
+            toast({
+              title: "تم إنشاء رابط مشاركة",
+              description: `يمكن للاعبين الآخرين الانضمام عبر الرابط: ${window.location.origin}/share/${sharedQuizId}`,
+            });
+          }
+        } catch (error) {
+          console.error('Error creating shared quiz:', error);
+        }
+        
         try {
           const playerIdsMap = await savePlayersToDb(parsedPlayers);
           setDbPlayerIds(playerIdsMap);
         } catch (error) {
           console.error('Error saving players to database:', error);
-          // Continue with game even if DB save fails
         }
         
-        // Get enough questions for all players - get at least 100 questions
         const totalQuestionsNeeded = parsedPlayers.length * questionsPerPlayer;
-        let allQuestions = getQuizQuestions(difficultyValue, Math.max(totalQuestionsNeeded * 2, 100)); 
+        let allQuestions = getQuizQuestions(difficultyValue, Math.max(totalQuestionsNeeded * 2, 100));
         
-        // Make sure we have enough questions
         if (allQuestions.length < totalQuestionsNeeded) {
-          console.warn('Not enough questions available. Reducing questions per player.');
           setQuestionsPerPlayer(Math.floor(allQuestions.length / parsedPlayers.length));
         }
         
-        // Always shuffle all questions to ensure randomness
         allQuestions = shuffleArray(allQuestions);
         
-        // Setup player states
-        const playerStates: PlayerState[] = parsedPlayers.map((player, index) => {
-          // Get unique questions for this player by taking from the shuffled array
+        const playerStates = parsedPlayers.map((player, index) => {
           const startIndex = index * questionsPerPlayer;
           const playerQuestions = allQuestions.slice(startIndex, startIndex + questionsPerPlayer);
           
@@ -112,7 +194,6 @@ const PlayQuiz: React.FC = () => {
         setPlayers(playerStates);
         setIsLoading(false);
         
-        // Start countdown
         setShowCountdown(true);
         let count = 3;
         const countdownInterval = setInterval(() => {
@@ -123,12 +204,11 @@ const PlayQuiz: React.FC = () => {
             setShowCountdown(false);
           }
         }, 1000);
-        
       } catch (error) {
         console.error('Error initializing game:', error);
         toast({
           title: "خطأ في تحميل اللعبة",
-          description: "حدث خطأ أثناء تهيئة اللعبة. سيتم إعادتك إلى الصفحة الرئيسية.",
+          description: "حدث خطأ أثناء تهيئة اللعبة. سيتم إعادتك إلى ال��فحة الرئيسية.",
           variant: "destructive"
         });
         navigate('/quiz');
@@ -136,25 +216,21 @@ const PlayQuiz: React.FC = () => {
     };
     
     initializeGame();
-  }, [navigate, questionsPerPlayer]);
+  }, [navigate, questionsPerPlayer, quizId]);
   
   const currentPlayerState = players[currentPlayerIndex];
   
-  // Select next player randomly
   const selectRandomNextPlayer = useCallback(() => {
     if (players.length <= 1) return currentPlayerIndex;
     
-    // Get eligible players (not all have finished their questions)
     const eligiblePlayers = players.filter((player, index) => 
       index !== currentPlayerIndex && player.currentQuestionIndex < questionsPerPlayer
     );
     
     if (eligiblePlayers.length === 0) {
-      // If only current player left, continue with them
       return currentPlayerIndex;
     }
     
-    // Pick random player from eligible players
     const randomPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
     return players.findIndex(p => p.player.id === randomPlayer.player.id);
   }, [players, currentPlayerIndex, questionsPerPlayer]);
@@ -164,15 +240,12 @@ const PlayQuiz: React.FC = () => {
       const updatedPlayers = [...prevPlayers];
       const currentPlayer = { ...updatedPlayers[currentPlayerIndex] };
       
-      // Update score if answer is correct
       if (isCorrect) {
         currentPlayer.score += 1;
       }
       
-      // Move to next question
       currentPlayer.currentQuestionIndex += 1;
       
-      // Reset helpers for next question
       currentPlayer.helpers = {
         removeOptions: false,
         showHint: false,
@@ -183,10 +256,8 @@ const PlayQuiz: React.FC = () => {
       return updatedPlayers;
     });
     
-    // Show transition between rounds
     setRoundTransition(true);
     setTimeout(() => {
-      // Check if all players have finished their questions
       const allPlayersFinished = players.every(p => 
         p.currentQuestionIndex >= questionsPerPlayer - 1
       );
@@ -194,11 +265,9 @@ const PlayQuiz: React.FC = () => {
       if (allPlayersFinished) {
         setGameOver(true);
       } else {
-        // Select next player randomly
         const nextPlayerIdx = selectRandomNextPlayer();
         setNextPlayerName(players[nextPlayerIdx].player.name);
         
-        // Show player transition
         setPlayerTransition(true);
         
         setTimeout(() => {
@@ -212,7 +281,6 @@ const PlayQuiz: React.FC = () => {
   }, [currentPlayerIndex, players, selectRandomNextPlayer, questionsPerPlayer]);
   
   const handleTimeout = useCallback(() => {
-    // Same logic as answering incorrectly
     handleAnswer(false);
   }, [handleAnswer]);
   
@@ -221,7 +289,6 @@ const PlayQuiz: React.FC = () => {
       const updatedPlayers = [...prevPlayers];
       const currentPlayer = { ...updatedPlayers[currentPlayerIndex] };
       
-      // If helper has been used already by this player (across all questions), don't allow it again
       if (currentPlayer.usedHelpers[helper]) {
         toast({
           title: "لا يمكن استخدام المساعدة",
@@ -232,26 +299,21 @@ const PlayQuiz: React.FC = () => {
       }
       
       if (helper === 'changeQuestion') {
-        // Get a new question
         const nextIndex = currentPlayer.currentQuestionIndex + 1;
         
-        // Check if we have more questions
         if (nextIndex < currentPlayer.questions.length) {
           currentPlayer.currentQuestionIndex = nextIndex;
         } else {
-          // If we're out of questions, redirect to results
           setGameOver(true);
           return updatedPlayers;
         }
       }
       
-      // Mark the helper as used for this question
       currentPlayer.helpers = {
         ...currentPlayer.helpers,
         [helper]: true
       };
       
-      // Also mark it as used overall
       currentPlayer.usedHelpers = {
         ...currentPlayer.usedHelpers,
         [helper]: true
@@ -263,7 +325,6 @@ const PlayQuiz: React.FC = () => {
   }, [currentPlayerIndex, toast]);
   
   const handlePlayAgain = useCallback(() => {
-    // Clear session storage and redirect to quiz setup
     sessionStorage.removeItem('quizPlayers');
     sessionStorage.removeItem('quizDifficulty');
     navigate('/quiz');
@@ -280,7 +341,6 @@ const PlayQuiz: React.FC = () => {
     return currentPlayerState.questions[questionIndex];
   }, [currentPlayerState]);
   
-  // Render loading state
   if (isLoading) {
     return (
       <Layout>
@@ -293,7 +353,6 @@ const PlayQuiz: React.FC = () => {
     );
   }
   
-  // Show countdown
   if (showCountdown) {
     return (
       <Layout>
@@ -313,7 +372,6 @@ const PlayQuiz: React.FC = () => {
     );
   }
   
-  // Show player transition
   if (playerTransition) {
     return (
       <Layout>
@@ -333,7 +391,6 @@ const PlayQuiz: React.FC = () => {
     );
   }
   
-  // Show results when game is over
   if (gameOver) {
     const results = players.map(p => ({
       player: p.player,
@@ -355,7 +412,6 @@ const PlayQuiz: React.FC = () => {
     );
   }
   
-  // Get current question
   const currentQuestion = getCurrentQuestion();
   
   if (!currentQuestion || !currentPlayerState) {
@@ -368,6 +424,38 @@ const PlayQuiz: React.FC = () => {
             <button onClick={handlePlayAgain} className="bg-op-ocean text-white px-6 py-3 rounded-md hover:bg-op-blue transition">
               الرجوع للقائمة الرئيسية
             </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (waitingForPlayers) {
+    return (
+      <Layout>
+        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+          <div className="glass-card p-8 max-w-lg w-full text-center">
+            <h2 className="text-2xl md:text-3xl font-adventure text-white mb-6">في انتظار اللاعبين</h2>
+            <p className="text-white mb-8">شارك الرابط التالي مع أصدقائك للانضمام إلى المسابقة:</p>
+            
+            <div className="bg-white bg-opacity-20 rounded-lg p-4 mb-6 break-all">
+              <p className="text-op-yellow font-medium">{window.location.href}</p>
+            </div>
+            
+            <button 
+              onClick={() => navigator.clipboard.writeText(window.location.href)}
+              className="bg-op-ocean text-white px-6 py-3 rounded-md hover:bg-op-blue transition"
+            >
+              نسخ الرابط
+            </button>
+            
+            <div className="mt-8">
+              <div className="flex items-center justify-center space-x-2 rtl:space-x-reverse">
+                <div className="w-3 h-3 rounded-full bg-op-yellow animate-bounce"></div>
+                <div className="w-3 h-3 rounded-full bg-op-yellow animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-3 h-3 rounded-full bg-op-yellow animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </div>
           </div>
         </div>
       </Layout>
@@ -435,6 +523,7 @@ const PlayQuiz: React.FC = () => {
                   onTimeout={handleTimeout}
                   currentPlayer={currentPlayerState.player}
                   playerHelpers={currentPlayerState.helpers}
+                  usedHelpers={currentPlayerState.usedHelpers}
                   onUseHelper={handleUseHelper}
                 />
               </motion.div>
