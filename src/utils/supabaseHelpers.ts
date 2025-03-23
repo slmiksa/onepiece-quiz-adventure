@@ -28,6 +28,39 @@ export interface SharedQuiz {
   status: 'waiting' | 'playing' | 'finished';
 }
 
+export interface DbUser {
+  id: string;
+  username: string;
+  avatar: string;
+  created_at: string;
+}
+
+export interface DbRoom {
+  id: string;
+  name: string;
+  owner_id: string;
+  status: 'waiting' | 'playing' | 'finished';
+  difficulty: string;
+  max_players: number;
+  created_at: string;
+}
+
+export interface DbRoomPlayer {
+  id: string;
+  room_id: string;
+  user_id: string;
+  ready: boolean;
+  created_at: string;
+}
+
+export interface DbRoomMessage {
+  id: string;
+  room_id: string;
+  user_id: string;
+  message: string;
+  created_at: string;
+}
+
 // Save player to database
 export const savePlayerToDb = async (player: Player): Promise<DbPlayer | null> => {
   try {
@@ -184,5 +217,172 @@ export const joinSharedQuiz = async (quizId: string, player: Player): Promise<bo
   } catch (err) {
     console.error('Exception joining shared quiz:', err);
     return false;
+  }
+};
+
+// Room functions
+export const getRoomById = async (roomId: string): Promise<DbRoom | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('id', roomId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching room:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception fetching room:', err);
+    return null;
+  }
+};
+
+export const getRoomPlayers = async (roomId: string): Promise<DbRoomPlayer[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('room_players')
+      .select(`
+        *,
+        users (username, avatar)
+      `)
+      .eq('room_id', roomId);
+    
+    if (error) {
+      console.error('Error fetching room players:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (err) {
+    console.error('Exception fetching room players:', err);
+    return [];
+  }
+};
+
+export const joinRoom = async (roomId: string, userId: string): Promise<boolean> => {
+  try {
+    // Check if user is already in the room
+    const { data: existingPlayer, error: checkError } = await supabase
+      .from('room_players')
+      .select('*')
+      .eq('room_id', roomId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking player in room:', checkError);
+      return false;
+    }
+    
+    if (existingPlayer) {
+      return true; // Already joined
+    }
+    
+    // Add player to room
+    const { error } = await supabase
+      .from('room_players')
+      .insert({
+        room_id: roomId,
+        user_id: userId,
+        ready: false
+      });
+    
+    if (error) {
+      console.error('Error joining room:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception joining room:', err);
+    return false;
+  }
+};
+
+export const setPlayerReady = async (roomId: string, userId: string, isReady: boolean): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('room_players')
+      .update({ ready: isReady })
+      .eq('room_id', roomId)
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Error updating player ready status:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception updating player ready status:', err);
+    return false;
+  }
+};
+
+export const startGame = async (roomId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('rooms')
+      .update({ status: 'playing' })
+      .eq('id', roomId);
+    
+    if (error) {
+      console.error('Error starting game:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception starting game:', err);
+    return false;
+  }
+};
+
+export const sendMessage = async (roomId: string, userId: string, message: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('room_messages')
+      .insert({
+        room_id: roomId,
+        user_id: userId,
+        message
+      });
+    
+    if (error) {
+      console.error('Error sending message:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception sending message:', err);
+    return false;
+  }
+};
+
+export const getRoomMessages = async (roomId: string): Promise<DbRoomMessage[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('room_messages')
+      .select(`
+        *,
+        users (username, avatar)
+      `)
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching room messages:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (err) {
+    console.error('Exception fetching room messages:', err);
+    return [];
   }
 };

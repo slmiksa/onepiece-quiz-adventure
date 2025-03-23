@@ -4,12 +4,18 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/Index";
 import MangaNews from "./pages/MangaNews";
 import QuizGame from "./pages/QuizGame";
 import PlayQuiz from "./pages/PlayQuiz";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import Rooms from "./pages/Rooms";
+import CreateRoomPage from "./pages/CreateRoomPage";
+import RoomPage from "./pages/RoomPage";
+import AuthenticatedRoute from "./components/AuthenticatedRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,22 +28,36 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/manga" element={<MangaNews />} />
-          <Route path="/quiz" element={<QuizGame />} />
-          <Route path="/play" element={<PlayQuiz />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/share/:quizId" element={<PlayQuiz />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/manga" element={<MangaNews />} />
+            <Route path="/quiz" element={
+              <AuthenticatedRoute>
+                <QuizGame />
+              </AuthenticatedRoute>
+            } />
+            <Route path="/play" element={
+              <AuthenticatedRoute>
+                <PlayQuiz />
+              </AuthenticatedRoute>
+            } />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/rooms" element={<Rooms />} />
+            <Route path="/create-room" element={<CreateRoomPage />} />
+            <Route path="/room/:roomId" element={<RoomPage />} />
+            <Route path="/share/:quizId" element={<PlayQuiz />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
