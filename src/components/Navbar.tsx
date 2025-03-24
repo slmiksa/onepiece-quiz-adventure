@@ -1,12 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, signOut, userProfile } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +31,14 @@ const Navbar: React.FC = () => {
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLoginClick = () => {
+    navigate('/auth');
+  };
+
+  const handleSignupClick = () => {
+    navigate('/auth?mode=sign_up');
   };
   
   return (
@@ -59,6 +71,43 @@ const Navbar: React.FC = () => {
             <Link to="/quiz" className={`nav-link ${isActive('/quiz') ? 'active' : ''}`}>
               اختبار المعرفة
             </Link>
+
+            {/* Auth Buttons - Desktop */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <span className="text-op-navy">مرحباً {userProfile?.username || 'بك'}</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={signOut}
+                  className="flex items-center gap-1 rtl:flex-row-reverse"
+                >
+                  <LogOut size={16} />
+                  <span>تسجيل خروج</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleLoginClick}
+                  className="flex items-center gap-1 rtl:flex-row-reverse"
+                >
+                  <LogIn size={16} />
+                  <span>تسجيل دخول</span>
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={handleSignupClick}
+                  className="flex items-center gap-1 rtl:flex-row-reverse"
+                >
+                  <UserPlus size={16} />
+                  <span>حساب جديد</span>
+                </Button>
+              </div>
+            )}
           </nav>
           
           {/* Mobile Menu Button */}
@@ -85,6 +134,43 @@ const Navbar: React.FC = () => {
             <Link to="/quiz" className={`nav-link ${isActive('/quiz') ? 'active' : ''}`}>
               اختبار المعرفة
             </Link>
+            
+            {/* Auth Buttons - Mobile */}
+            {isAuthenticated ? (
+              <div className="flex flex-col items-center space-y-2 w-full px-6 pt-2">
+                <span className="text-op-navy">مرحباً {userProfile?.username || 'بك'}</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={signOut}
+                  className="flex items-center gap-1 rtl:flex-row-reverse w-full"
+                >
+                  <LogOut size={16} />
+                  <span>تسجيل خروج</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center space-y-2 w-full px-6 pt-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleLoginClick}
+                  className="flex items-center gap-1 rtl:flex-row-reverse w-full"
+                >
+                  <LogIn size={16} />
+                  <span>تسجيل دخول</span>
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={handleSignupClick}
+                  className="flex items-center gap-1 rtl:flex-row-reverse w-full"
+                >
+                  <UserPlus size={16} />
+                  <span>حساب جديد</span>
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       )}
