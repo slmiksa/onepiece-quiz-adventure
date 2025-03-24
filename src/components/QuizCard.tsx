@@ -166,13 +166,15 @@ const QuizCard: React.FC<QuizCardProps> = ({
             <div className="w-16 h-16 border-4 border-op-ocean border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
-        <img 
-          src={question.image} 
-          alt="Question"
-          className={`w-full h-auto max-h-[350px] object-contain ${imageLoaded ? '' : 'opacity-0'}`}
-          onLoad={() => setImageLoaded(true)}
-          onError={handleImageError}
-        />
+        {question.image && (
+          <img 
+            src={question.image} 
+            alt="Question"
+            className={`w-full h-auto max-h-[350px] object-contain ${imageLoaded ? '' : 'opacity-0'}`}
+            onLoad={() => setImageLoaded(true)}
+            onError={handleImageError}
+          />
+        )}
       </div>
       
       <h3 className="text-xl md:text-2xl font-bold text-op-navy mb-6">{question.question}</h3>
