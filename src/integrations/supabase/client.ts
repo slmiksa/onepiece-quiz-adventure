@@ -15,8 +15,32 @@ export const supabase = createClient<Database>(
   {
     realtime: {
       params: {
-        eventsPerSecond: 10
+        eventsPerSecond: 10,
+        ephemeral: false
       }
+    },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+    db: {
+      schema: 'public'
     }
   }
 );
+
+// Enable specific tables for realtime subscription
+(async () => {
+  try {
+    // Enable realtime for the tables we need
+    await supabase.channel('enable-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {})
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players' }, () => {})
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, () => {})
+      .subscribe();
+    
+    console.log('Realtime subscriptions enabled for rooms tables');
+  } catch (error) {
+    console.error('Error enabling realtime:', error);
+  }
+})();

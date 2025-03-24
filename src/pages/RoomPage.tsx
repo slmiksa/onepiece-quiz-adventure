@@ -30,16 +30,25 @@ const RoomPage: React.FC = () => {
       }
 
       try {
+        console.log(`Checking if room ${roomId} exists`);
         const { data, error } = await supabase
           .from('rooms')
-          .select('id')
+          .select('id, status')
           .eq('id', roomId)
           .single();
 
         if (error || !data) {
+          console.error('Room not found:', error);
           setRoomExists(false);
         } else {
+          console.log('Room found:', data);
           setRoomExists(true);
+          
+          // If game is already in 'playing' status, navigate to play
+          if (data.status === 'playing') {
+            sessionStorage.setItem('quizRoomId', roomId);
+            navigate('/play');
+          }
         }
       } catch (error) {
         console.error('Error checking room:', error);
@@ -50,7 +59,34 @@ const RoomPage: React.FC = () => {
     };
 
     checkRoom();
-  }, [roomId]);
+    
+    // Set up realtime subscription to room status
+    const roomStatusChannel = supabase
+      .channel(`room-status-${roomId}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${roomId}`,
+        },
+        (payload) => {
+          console.log('Room status change detected:', payload);
+          // If room was deleted or status changed to 'playing'
+          if (payload.eventType === 'DELETE') {
+            setRoomExists(false);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`Room status subscription: ${status}`);
+      });
+      
+    return () => {
+      supabase.removeChannel(roomStatusChannel);
+    };
+  }, [roomId, navigate]);
 
   // Reset copy state after 2 seconds
   useEffect(() => {
@@ -64,6 +100,7 @@ const RoomPage: React.FC = () => {
 
   // Handle game start
   const handleGameStart = () => {
+    console.log('Game starting...');
     setGameStarted(true);
     
     // Store room ID in session storage

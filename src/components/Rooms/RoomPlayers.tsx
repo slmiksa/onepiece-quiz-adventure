@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -43,9 +42,11 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
 
   const isOwner = room?.owner_id === user?.id;
 
-  const fetchRoomAndPlayers = async () => {
+  const fetchRoomAndPlayers = useCallback(async () => {
     try {
       setLoading(true);
+      
+      console.log(`Fetching room and players for room ${roomId}`);
       
       // Get room details
       const { data: roomData, error: roomError } = await supabase
@@ -54,19 +55,33 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         .eq('id', roomId)
         .single();
         
-      if (roomError) throw roomError;
+      if (roomError) {
+        console.error('Error fetching room:', roomError);
+        throw roomError;
+      }
       
+      if (!roomData) {
+        console.error('No room data found');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Room data:', roomData);
       setRoom(roomData as Room);
       
-      // Get players - use count: 'exact' to ensure we get accurate count
-      const { data: playersData, error: playersError } = await supabase
+      // Get ALL players for this room using exact count
+      const { data: playersData, count, error: playersError } = await supabase
         .from('room_players')
         .select('*', { count: 'exact' })
         .eq('room_id', roomId);
         
-      if (playersError) throw playersError;
+      if (playersError) {
+        console.error('Error fetching players:', playersError);
+        throw playersError;
+      }
       
-      console.log('Players in room:', playersData?.length || 0);
+      console.log(`Found ${count} players in room ${roomId}`);
+      console.log('Players data:', playersData);
       
       if (!playersData || playersData.length === 0) {
         setPlayers([]);
@@ -80,12 +95,20 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       
       // Fetch user details for each player
       const userIds = playersData.map(player => player.user_id);
+      
+      console.log('Fetching user details for IDs:', userIds);
+      
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('id, username, avatar')
         .in('id', userIds);
         
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching user details:', usersError);
+        throw usersError;
+      }
+      
+      console.log('User details:', usersData);
       
       // Map user details to players
       const playersWithUserDetails = playersData.map(player => {
@@ -103,6 +126,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         };
       });
       
+      console.log('Players with user details:', playersWithUserDetails);
       setPlayers(playersWithUserDetails);
       
       // Check if current user is ready
@@ -129,7 +153,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId, user, toast, onGameStart]);
 
   const joinRoom = async () => {
     if (!user) return;
@@ -152,6 +176,8 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         console.log('User already in room');
         return;
       }
+      
+      console.log(`User ${user.id} joining room ${roomId}`);
       
       // Add user to room
       const { error: joinError } = await supabase
@@ -184,10 +210,13 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
   };
 
   useEffect(() => {
+    console.log('Room component mounted or roomId changed');
     fetchRoomAndPlayers();
     
-    // Set up realtime subscriptions with a unique channel name
+    // Set up realtime subscriptions with a unique channel name to prevent conflicts
     const channelName = `room-changes-${roomId}-${Date.now()}`;
+    console.log(`Creating realtime channel: ${channelName}`);
+    
     const channel = supabase
       .channel(channelName)
       .on(
@@ -223,12 +252,16 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Realtime subscription status: ${status}`);
+      });
       
+    // Cleanup function
     return () => {
+      console.log(`Removing channel: ${channelName}`);
       supabase.removeChannel(channel);
     };
-  }, [roomId, user?.id]);
+  }, [roomId, fetchRoomAndPlayers]);
 
   const toggleReady = async () => {
     if (!user) return;
