@@ -15,56 +15,79 @@ export const supabase = createClient<Database>(
   {
     realtime: {
       params: {
-        eventsPerSecond: 20,  // زيادة معدل الأحداث المسموح بها في الثانية
-        fastlane: true,       // تمكين fastlane لتحسين الأداء
-        recovery: true,       // تمكين الاسترداد التلقائي للاتصال
-        ephemeral: false,     // تعيين ephemeral إلى false لضمان استمرارية البيانات
+        eventsPerSecond: 40,  // Increased event rate
+        fastlane: true,       // Enable fastlane for better performance
+        recovery: true,       // Enable automatic connection recovery
+        ephemeral: false,     // Set ephemeral to false for data persistence
         transportOptions: {
-          maxRetries: 5,      // زيادة عدد المحاولات
-          retryTimeoutMs: 1000 // الوقت بين كل محاولة إعادة الاتصال
+          maxRetries: 10,      // Increased retry attempts
+          retryTimeoutMs: 1000 // Time between reconnection attempts
         }
       }
     },
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true  // تمكين اكتشاف الجلسة في عنوان URL
+      detectSessionInUrl: true
     },
     db: {
       schema: 'public'
     },
     global: {
       headers: {
-        'x-application-name': 'one-piece-quiz' // إضافة رأس مخصص للتمييز بين الطلبات
+        'x-application-name': 'one-piece-quiz'
       },
-      fetch: fetch // استخدام fetch API القياسية
+      fetch: (url, options) => {
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.warn('Supabase fetch timeout, aborting request');
+          timeoutController.abort();
+        }, 15000); // 15 second timeout
+
+        const fetchOptions = {
+          ...options,
+          signal: timeoutController.signal
+        };
+
+        return fetch(url, fetchOptions)
+          .finally(() => clearTimeout(timeoutId));
+      }
     }
   }
 );
 
-// Enable specific tables for realtime subscription
+// Set up dedicated channels for critical tables with unique identifiers
 (async () => {
   try {
-    // Enable realtime for the tables we need
-    const channel = supabase.channel('enable-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {
-        console.log('Room change detected');
+    // Create a unique channel name with timestamp to avoid conflicts
+    const channelName = `room-tables-${Date.now()}`;
+    console.log(`Setting up realtime channel: ${channelName}`);
+    
+    const channel = supabase.channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, (payload) => {
+        console.log('Room change detected:', payload);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players' }, () => {
-        console.log('Room player change detected');
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players' }, (payload) => {
+        console.log('Room player change detected:', payload);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, () => {
-        console.log('Room message change detected');
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, (payload) => {
+        console.log('Room message change detected:', payload);
       });
     
-    await channel.subscribe((status) => {
-      console.log(`Realtime subscriptions status: ${status}`);
-      if (status === 'SUBSCRIBED') {
-        console.log('Realtime subscriptions enabled for rooms tables');
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error('Error subscribing to realtime channel');
-      }
-    });
+    const status = await channel.subscribe();
+    console.log(`Realtime subscriptions status: ${status}`);
+    
+    if (status === 'SUBSCRIBED') {
+      console.log('Realtime subscriptions enabled for rooms tables');
+    } else if (status === 'CHANNEL_ERROR') {
+      console.error('Error subscribing to realtime channel');
+      
+      // After a short delay, try to reconnect if there was an error
+      setTimeout(() => {
+        console.log('Attempting to reconnect to realtime...');
+        channel.subscribe();
+      }, 5000);
+    }
   } catch (error) {
     console.error('Error enabling realtime:', error);
   }

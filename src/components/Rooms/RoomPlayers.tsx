@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Check, Copy, Share2 } from 'lucide-react';
+import { Check, Copy, Share2, RefreshCw, Loader2, Users } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,26 +35,37 @@ interface RoomPlayersProps {
 const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
+  const [playerCount, setPlayerCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const isOwner = room?.owner_id === user?.id;
 
   const fetchRoomAndPlayers = useCallback(async () => {
+    if (!roomId) {
+      console.error('No roomId provided');
+      setDataError('لم يتم توفير معرف الغرفة');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setDataError(null);
       
-      console.log(`Fetching room and players for room ${roomId}`);
+      console.log(`Fetching room data for room ${roomId}`);
       
       // Get room details
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
         .select('*')
         .eq('id', roomId)
-        .single();
+        .maybeSingle();
         
       if (roomError) {
         console.error('Error fetching room:', roomError);
@@ -62,6 +74,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       
       if (!roomData) {
         console.error('No room data found');
+        setDataError('لم يتم العثور على الغرفة');
         setLoading(false);
         return;
       }
@@ -69,10 +82,24 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       console.log('Room data:', roomData);
       setRoom(roomData as Room);
       
-      // Get ALL players for this room using exact count
-      const { data: playersData, count, error: playersError } = await supabase
+      // First, get count of players (separate query for better reliability)
+      const { count, error: countError } = await supabase
         .from('room_players')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', roomId);
+        
+      if (countError) {
+        console.error('Error counting players:', countError);
+        throw countError;
+      }
+      
+      console.log(`Found ${count} players in room ${roomId}`);
+      setPlayerCount(count || 0);
+      
+      // Get ALL players data
+      const { data: playersData, error: playersError } = await supabase
+        .from('room_players')
+        .select('*')
         .eq('room_id', roomId);
         
       if (playersError) {
@@ -80,16 +107,19 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         throw playersError;
       }
       
-      console.log(`Found ${count} players in room ${roomId}`);
       console.log('Players data:', playersData);
       
       if (!playersData || playersData.length === 0) {
+        console.log('No players found in the room');
         setPlayers([]);
-        setLoading(false);
+        
         // If the user is not in the room and is authenticated, join automatically
         if (user) {
+          console.log('Current user not in room, joining automatically');
           joinRoom();
         }
+        
+        setLoading(false);
         return;
       }
       
@@ -119,7 +149,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
             username: userDetail.username,
             avatar: userDetail.avatar
           } : {
-            username: 'Unknown User',
+            username: 'مستخدم غير معروف',
             avatar: ''
           },
           is_owner: player.user_id === roomData.owner_id
@@ -135,6 +165,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         setIsReady(currentPlayer.ready);
       } else if (user) {
         // User is not in the room yet, join automatically
+        console.log('Current user not in room players list, joining automatically');
         joinRoom();
       }
       
@@ -145,6 +176,8 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       
     } catch (error: any) {
       console.error('Error fetching room data:', error);
+      setDataError(error.message || 'حدث خطأ أثناء جلب بيانات الغرفة');
+      
       toast({
         title: 'خطأ',
         description: 'حدث خطأ أثناء جلب بيانات الغرفة',
@@ -152,13 +185,16 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       });
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [roomId, user, toast, onGameStart]);
 
   const joinRoom = async () => {
-    if (!user) return;
+    if (!user || !roomId) return;
     
     try {
+      console.log(`Attempting to join room ${roomId} as user ${user.id}`);
+      
       // Check if user is already in the room
       const { data: existingPlayer, error: checkError } = await supabase
         .from('room_players')
@@ -173,7 +209,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       }
       
       if (existingPlayer) {
-        console.log('User already in room');
+        console.log('User already in room, no need to join again');
         return;
       }
       
@@ -210,15 +246,15 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
   };
 
   useEffect(() => {
-    console.log('Room component mounted or roomId changed');
+    console.log('Room players component mounted or roomId changed');
     fetchRoomAndPlayers();
     
     // Set up realtime subscriptions with a unique channel name to prevent conflicts
-    const channelName = `room-changes-${roomId}-${Date.now()}`;
-    console.log(`Creating realtime channel: ${channelName}`);
+    const uniqueChannelId = `room-players-${roomId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    console.log(`Creating realtime channel for players: ${uniqueChannelId}`);
     
     const channel = supabase
-      .channel(channelName)
+      .channel(uniqueChannelId)
       .on(
         'postgres_changes',
         {
@@ -253,18 +289,21 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         }
       )
       .subscribe((status) => {
-        console.log(`Realtime subscription status: ${status}`);
+        console.log(`Realtime subscription status for players: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to room and player changes');
+        }
       });
       
     // Cleanup function
     return () => {
-      console.log(`Removing channel: ${channelName}`);
+      console.log(`Removing channel: ${uniqueChannelId}`);
       supabase.removeChannel(channel);
     };
-  }, [roomId, fetchRoomAndPlayers]);
+  }, [roomId, fetchRoomAndPlayers, onGameStart]);
 
   const toggleReady = async () => {
-    if (!user) return;
+    if (!user || !roomId) return;
     
     try {
       const newReadyState = !isReady;
@@ -293,7 +332,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
   };
 
   const startGame = async () => {
-    if (!isOwner || players.length < 2) return;
+    if (!isOwner || !roomId || players.length < 2) return;
     
     // Check if all players are ready
     const allReady = players.every(p => p.ready);
@@ -342,10 +381,46 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
     });
   };
 
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchRoomAndPlayers();
+  };
+
   if (loading) {
     return (
       <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg border border-opacity-20 border-white shadow-glass p-6">
-        <div className="animate-pulse text-white">جاري تحميل معلومات اللاعبين...</div>
+        <div className="flex flex-col items-center justify-center h-40 text-white">
+          <Loader2 className="animate-spin h-8 w-8 mb-2" />
+          <div>جاري تحميل معلومات اللاعبين...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg border border-opacity-20 border-white shadow-glass p-6">
+        <div className="text-white text-center">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
+          <p className="mb-4">{dataError}</p>
+          <Button 
+            onClick={handleRefresh} 
+            className="bg-op-blue text-white" 
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                جاري إعادة المحاولة...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                إعادة التحميل
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -353,7 +428,26 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
   if (!room) {
     return (
       <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg border border-opacity-20 border-white shadow-glass p-6">
-        <div className="text-white">لم يتم العثور على الغرفة</div>
+        <div className="text-white text-center">
+          <p>لم يتم العثور على الغرفة</p>
+          <Button 
+            onClick={handleRefresh} 
+            className="bg-op-blue text-white mt-4" 
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                جاري إعادة المحاولة...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                إعادة التحميل
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -394,7 +488,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       </div>
       
       <div className="mb-4 rtl">
-        <div className="flex items-center">
+        <div className="flex items-center mb-2">
           <span className={`px-2 py-1 rounded text-xs ${
             room.difficulty === 'easy' ? 'bg-green-500' : 
             room.difficulty === 'medium' ? 'bg-yellow-500' : 
@@ -405,41 +499,66 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
              'صعب'}
           </span>
           <span className="text-white mx-2">•</span>
-          <span className="text-white text-sm">{players.length} / {room.max_players} لاعبين</span>
+          <span className="text-white text-sm flex items-center">
+            <Users size={14} className="mr-1" />
+            {playerCount} / {room.max_players} لاعبين
+          </span>
+        </div>
+        
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm" 
+            className="text-white border-white hover:bg-white hover:bg-opacity-10"
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
         </div>
       </div>
       
-      <div className="space-y-4 mb-6">
-        {players.map((player) => (
-          <div key={player.id} className="flex items-center justify-between bg-white bg-opacity-5 p-3 rounded-lg rtl">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src={player.user_details?.avatar} alt={player.user_details?.username} />
-                <AvatarFallback>{player.user_details?.username?.slice(0, 2).toUpperCase() || 'OP'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-white">{player.user_details?.username || 'Unknown User'}</span>
-                  {player.is_owner && (
-                    <span className="bg-op-yellow text-op-navy text-xs px-2 py-0.5 rounded">المضيف</span>
-                  )}
+      <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
+        {players.length === 0 ? (
+          <div className="text-center text-white p-4 bg-white bg-opacity-5 rounded-lg">
+            لا يوجد لاعبين في الغرفة حاليا
+          </div>
+        ) : (
+          players.map((player) => (
+            <div key={player.id} className="flex items-center justify-between bg-white bg-opacity-5 p-3 rounded-lg rtl">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={player.user_details?.avatar} alt={player.user_details?.username} />
+                  <AvatarFallback>{player.user_details?.username?.slice(0, 2).toUpperCase() || 'OP'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white">{player.user_details?.username || 'مستخدم غير معروف'}</span>
+                    {player.is_owner && (
+                      <span className="bg-op-yellow text-op-navy text-xs px-2 py-0.5 rounded">المضيف</span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center">
+                {player.ready ? (
+                  <span className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                    <Check size={14} />
+                    مستعد
+                  </span>
+                ) : (
+                  <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">
+                    غير مستعد
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center">
-              {player.ready ? (
-                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                  <Check size={14} />
-                  مستعد
-                </span>
-              ) : (
-                <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">
-                  غير مستعد
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
       
       <div className="flex justify-center gap-4 mt-6 rtl">

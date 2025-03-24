@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import RoomPlayers from '../components/Rooms/RoomPlayers';
@@ -7,7 +7,7 @@ import RoomChat from '../components/Rooms/RoomChat';
 import { motion } from 'framer-motion';
 import AuthenticatedRoute from '@/components/AuthenticatedRoute';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, AlertCircle, Loader2 } from 'lucide-react';
+import { Copy, Share2, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -24,74 +24,84 @@ const RoomPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // معالجة محاولات إعادة الاتصال وجلب بيانات الغرفة
-  useEffect(() => {
-    const checkRoom = async () => {
-      if (!roomId) {
+  // Handle connection attempts and room data fetching with improved error handling
+  const checkRoom = useCallback(async () => {
+    if (!roomId) {
+      setRoomExists(false);
+      setIsLoading(false);
+      setErrorMessage("معرف الغرفة غير موجود في الرابط");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      console.log(`Checking if room ${roomId} exists (attempt ${retryCount + 1})`);
+      
+      // First, check if the room exists
+      const { data: roomData, error: roomError } = await supabase
+        .from('rooms')
+        .select('id, status, name, owner_id, difficulty, max_players')
+        .eq('id', roomId)
+        .maybeSingle();
+
+      if (roomError) {
+        console.error('Error fetching room data:', roomError);
+        throw new Error(roomError.message || 'حدث خطأ أثناء جلب بيانات الغرفة');
+      }
+
+      if (!roomData) {
+        console.error('No room data returned');
         setRoomExists(false);
+        setErrorMessage("الغرفة غير موجودة أو تم حذفها");
         setIsLoading(false);
-        setErrorMessage("معرف الغرفة غير موجود في الرابط");
         return;
       }
-
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
-        console.log(`Checking if room ${roomId} exists (attempt ${retryCount + 1})`);
-        
-        const { data, error } = await supabase
-          .from('rooms')
-          .select('id, status')
-          .eq('id', roomId)
-          .single();
-
-        if (error) {
-          console.error('Room not found:', error);
-          throw error;
-        }
-
-        if (!data) {
-          console.error('No room data returned');
-          setRoomExists(false);
-          setErrorMessage("الغرفة غير موجودة أو تم حذفها");
-        } else {
-          console.log('Room found:', data);
-          setRoomExists(true);
-          setErrorMessage(null);
-          
-          // If game is already in 'playing' status, navigate to play
-          if (data.status === 'playing') {
-            sessionStorage.setItem('quizRoomId', roomId);
-            navigate('/play');
-          }
-        }
-      } catch (error: any) {
-        console.error('Error checking room:', error);
-        setErrorMessage(error.message || "حدث خطأ أثناء جلب بيانات الغرفة");
-        
-        // Retry logic if under max attempts
-        if (retryCount < 3) {
-          setIsRetrying(true);
-          const timer = setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            setIsRetrying(false);
-          }, 2000);
-          return () => clearTimeout(timer);
-        } else {
-          // After max retries show the error but don't set roomExists to false yet
-          // to allow manual retry
-          setIsRetrying(false);
-        }
-      } finally {
-        setIsLoading(false);
+      
+      console.log('Room data fetched successfully:', roomData);
+      setRoomExists(true);
+      setErrorMessage(null);
+      
+      // If game is already in 'playing' status, navigate to play
+      if (roomData.status === 'playing') {
+        console.log('Room is in playing state, redirecting to play screen');
+        sessionStorage.setItem('quizRoomId', roomId);
+        navigate('/play');
+        return;
       }
-    };
+    } catch (error: any) {
+      console.error('Error checking room:', error);
+      setErrorMessage(error.message || "حدث خطأ أثناء جلب بيانات الغرفة");
+      
+      // Retry logic if under max attempts
+      if (retryCount < 3) {
+        console.log(`Will retry in 2 seconds (attempt ${retryCount + 1} of 3)`);
+        setIsRetrying(true);
+        const timer = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          setIsRetrying(false);
+        }, 2000);
+        return () => clearTimeout(timer);
+      } else {
+        console.log('Max retry attempts reached');
+        setIsRetrying(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [roomId, navigate, retryCount]);
 
+  useEffect(() => {
     checkRoom();
     
-    // Set up realtime subscription to room status
+    // Set up realtime subscription to room status with unique channel names
+    if (!roomId) return;
+    
+    const uniqueChannelId = `room-status-${roomId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    console.log(`Creating realtime channel for room status: ${uniqueChannelId}`);
+    
     const roomStatusChannel = supabase
-      .channel(`room-status-${roomId}-${Date.now()}`)
+      .channel(uniqueChannelId)
       .on(
         'postgres_changes',
         {
@@ -104,11 +114,13 @@ const RoomPage: React.FC = () => {
           console.log('Room status change detected:', payload);
           // If room status changed to 'playing'
           if (payload.new && typeof payload.new === 'object' && 'status' in payload.new && payload.new.status === 'playing') {
+            console.log('Room status changed to playing, navigating to play screen');
             sessionStorage.setItem('quizRoomId', roomId as string);
             navigate('/play');
           }
           // If room was deleted
           if (payload.eventType === 'DELETE') {
+            console.log('Room was deleted, updating UI');
             setRoomExists(false);
             setErrorMessage("تم حذف الغرفة");
           }
@@ -116,12 +128,18 @@ const RoomPage: React.FC = () => {
       )
       .subscribe((status) => {
         console.log(`Room status subscription: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to room status changes');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to room status channel');
+        }
       });
       
     return () => {
+      console.log(`Removing channel: ${uniqueChannelId}`);
       supabase.removeChannel(roomStatusChannel);
     };
-  }, [roomId, navigate, retryCount]);
+  }, [roomId, navigate, checkRoom]);
 
   // Reset copy state after 2 seconds
   useEffect(() => {
@@ -148,10 +166,16 @@ const RoomPage: React.FC = () => {
     }
   };
 
-  // Manual retry function
+  // Manual retry function with loading state
   const handleRetry = () => {
+    console.log('Manual retry initiated');
     setRetryCount(0);
     setIsRetrying(true);
+    
+    // Small delay to show the loading state before retrying
+    setTimeout(() => {
+      checkRoom();
+    }, 500);
   };
 
   // Copy room link to clipboard
@@ -203,8 +227,8 @@ const RoomPage: React.FC = () => {
         <div className="min-h-screen pt-24 pb-16 quiz-container">
           <div className="container mx-auto px-4 flex justify-center items-center">
             <div className="text-white text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-              <p>جاري التحميل...</p>
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+              <p>جاري تحميل بيانات الغرفة...</p>
             </div>
           </div>
         </div>
@@ -240,7 +264,10 @@ const RoomPage: React.FC = () => {
                       جاري إعادة المحاولة...
                     </>
                   ) : (
-                    <>إعادة المحاولة</>
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      إعادة المحاولة
+                    </>
                   )}
                 </Button>
                 
@@ -325,10 +352,10 @@ const RoomPage: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-1">
-                <RoomPlayers roomId={roomId} onGameStart={handleGameStart} />
+                {roomId && <RoomPlayers roomId={roomId} onGameStart={handleGameStart} />}
               </div>
               <div className="md:col-span-2 h-[500px]">
-                <RoomChat roomId={roomId} />
+                {roomId && <RoomChat roomId={roomId} />}
               </div>
             </div>
           </div>
