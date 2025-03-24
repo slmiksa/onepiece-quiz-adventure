@@ -8,6 +8,7 @@ import { Send, Bell } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface ChatMessage {
   id: string;
@@ -28,15 +29,16 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const notificationSoundRef = useRef<HTMLAudioElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // First fetch messages
       const { data: messagesData, error: messagesError } = await supabase
@@ -80,7 +82,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       setMessages(messagesWithUserDetails);
     } catch (error: any) {
       console.error('Error fetching messages:', error);
-      // Removed toast notification for fetch errors
+      setError('حدث خطأ أثناء جلب الرسائل');
     } finally {
       setLoading(false);
     }
@@ -91,7 +93,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
     
     // Set up realtime subscription for new messages
     const channel = supabase
-      .channel('room-messages')
+      .channel('room-messages-' + roomId)
       .on(
         'postgres_changes',
         {
@@ -113,7 +115,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
               
             if (userError) throw userError;
             
-            // Create a properly typed newMessage object that conforms to ChatMessage interface
+            // Create a new correctly typed ChatMessage object
             const newMessageObject: ChatMessage = {
               id: payload.new.id,
               user_id: payload.new.user_id,
@@ -132,8 +134,6 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
               notificationSoundRef.current.play().catch(err => {
                 console.error("Could not play notification sound:", err);
               });
-              
-              // Removed toast notification for new messages
             }
           } catch (error) {
             console.error('Error processing new message:', error);
@@ -159,6 +159,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
     
     try {
       setSendingMessage(true);
+      setError(null);
       
       // Insert message
       const { error } = await supabase
@@ -173,11 +174,9 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       
       // Clear input
       setNewMessage('');
-      
-      // Removed success toast notification
     } catch (error: any) {
       console.error('Error sending message:', error);
-      // Removed error toast notification
+      setError('حدث خطأ أثناء إرسال الرسالة');
     } finally {
       setSendingMessage(false);
     }
@@ -205,6 +204,11 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       <div className="flex-grow p-4 overflow-y-auto rtl">
         {loading ? (
           <div className="text-center text-white opacity-70">جاري تحميل الرسائل...</div>
+        ) : error ? (
+          <Alert variant="destructive" className="bg-red-500 bg-opacity-20 border-red-500 text-white">
+            <AlertTitle className="text-white">خطأ</AlertTitle>
+            <AlertDescription className="text-white">{error}</AlertDescription>
+          </Alert>
         ) : messages.length === 0 ? (
           <div className="text-center text-white opacity-70">لا توجد رسائل بعد. كن أول من يرسل رسالة!</div>
         ) : (
