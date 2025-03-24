@@ -20,6 +20,7 @@ import AdminIndex from "./pages/admin/AdminIndex";
 import AdminLogin from "./pages/admin/AdminLogin";
 import Announcement from "./components/Announcement";
 import OnePieceBackground from "./components/OnePieceBackground";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,11 @@ const App = () => (
               <Route path="/manga" element={
                 <AuthenticatedRoute>
                   <MangaNews />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/profile" element={
+                <AuthenticatedRoute>
+                  <ProfilePage />
                 </AuthenticatedRoute>
               } />
               <Route path="/quiz" element={

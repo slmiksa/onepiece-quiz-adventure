@@ -1,180 +1,198 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
+import UserMenu from './UserMenu';
 
 const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { isAuthenticated, signOut, userProfile } = useAuth();
-  
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  
+
   useEffect(() => {
     setIsMenuOpen(false);
-  }, [location]);
-  
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-  
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  }, [location.pathname]);
 
-  const handleLoginClick = () => {
-    navigate('/auth');
-  };
-
-  const handleSignupClick = () => {
-    navigate('/auth?mode=sign_up');
-  };
-  
   return (
-    <header 
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md py-2' : 'bg-transparent py-4'
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-op-navy bg-opacity-90 backdrop-filter backdrop-blur-lg shadow-lg py-2'
+          : 'bg-transparent py-4'
       }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="https://cdn-icons-png.flaticon.com/512/5111/5111463.png" 
-              alt="One Piece Logo" 
-              className="h-10 w-10 object-contain"
-            />
-            <span className="text-xl font-adventure text-op-navy whitespace-nowrap">
-              One Piece Quiz
-            </span>
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <Link to="/" className="flex items-center">
+          <img 
+            src="/lovable-uploads/d81711f8-c3d9-4fea-b0b8-64f9842485ba.png" 
+            alt="One Piece Logo"
+            className="h-10 md:h-12"
+          />
+          <span className="text-white text-lg md:text-xl font-adventure ml-2">
+            عالم ون بيس
+          </span>
+        </Link>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="block lg:hidden text-white focus:outline-none"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          <div className="w-6 flex flex-col gap-1.5">
+            <span
+              className={`block h-0.5 bg-white transition-all duration-300 ${
+                isMenuOpen ? 'transform rotate-45 translate-y-2' : ''
+              }`}
+            ></span>
+            <span
+              className={`block h-0.5 bg-white transition-all duration-300 ${
+                isMenuOpen ? 'opacity-0' : 'opacity-100'
+              }`}
+            ></span>
+            <span
+              className={`block h-0.5 bg-white transition-all duration-300 ${
+                isMenuOpen ? 'transform -rotate-45 -translate-y-2' : ''
+              }`}
+            ></span>
+          </div>
+        </button>
+
+        {/* Desktop Menu */}
+        <div className="hidden lg:flex items-center space-x-6 rtl:space-x-reverse rtl">
+          <Link
+            to="/"
+            className="text-white hover:text-op-yellow transition-colors"
+          >
+            الرئيسية
+          </Link>
+          {isAuthenticated && (
+            <>
+              <Link
+                to="/manga"
+                className="text-white hover:text-op-yellow transition-colors"
+              >
+                مانجا ون بيس
+              </Link>
+              <Link
+                to="/quiz"
+                className="text-white hover:text-op-yellow transition-colors"
+              >
+                اختبار المعرفة
+              </Link>
+              <Link
+                to="/rooms"
+                className="text-white hover:text-op-yellow transition-colors"
+              >
+                الغرف
+              </Link>
+              <Link
+                to="/profile"
+                className="text-white hover:text-op-yellow transition-colors"
+              >
+                الملف الشخصي
+              </Link>
+            </>
+          )}
+          <Link
+            to="/leaderboard"
+            className="text-white hover:text-op-yellow transition-colors"
+          >
+            المتصدرون
           </Link>
           
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
-              الرئيسية
+          {isAuthenticated ? (
+            <UserMenu />
+          ) : (
+            <Link
+              to="/auth"
+              className="bg-op-yellow text-op-navy px-4 py-2 rounded-md font-medium hover:bg-op-straw transition-colors"
+            >
+              تسجيل الدخول
             </Link>
-            <Link to="/manga" className={`nav-link ${isActive('/manga') ? 'active' : ''}`}>
-              المانجا
-            </Link>
-            <Link to="/quiz" className={`nav-link ${isActive('/quiz') ? 'active' : ''}`}>
-              اختبار المعرفة
-            </Link>
-
-            {/* Auth Buttons - Desktop */}
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <span className="text-op-navy">مرحباً {userProfile?.username || 'بك'}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={signOut}
-                  className="flex items-center gap-1 rtl:flex-row-reverse"
-                >
-                  <LogOut size={16} />
-                  <span>تسجيل خروج</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleLoginClick}
-                  className="flex items-center gap-1 rtl:flex-row-reverse"
-                >
-                  <LogIn size={16} />
-                  <span>تسجيل دخول</span>
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={handleSignupClick}
-                  className="flex items-center gap-1 rtl:flex-row-reverse"
-                >
-                  <UserPlus size={16} />
-                  <span>حساب جديد</span>
-                </Button>
-              </div>
-            )}
-          </nav>
-          
-          {/* Mobile Menu Button */}
-          <button 
-            className="md:hidden btn-icon text-op-navy"
-            onClick={toggleMenu}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          )}
         </div>
       </div>
-      
-      {/* Mobile Navigation */}
-      {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-lg py-4 animate-fade-in">
-          <nav className="flex flex-col space-y-4 items-center rtl">
-            <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
-              الرئيسية
-            </Link>
-            <Link to="/manga" className={`nav-link ${isActive('/manga') ? 'active' : ''}`}>
-              المانجا
-            </Link>
-            <Link to="/quiz" className={`nav-link ${isActive('/quiz') ? 'active' : ''}`}>
-              اختبار المعرفة
-            </Link>
-            
-            {/* Auth Buttons - Mobile */}
-            {isAuthenticated ? (
-              <div className="flex flex-col items-center space-y-2 w-full px-6 pt-2">
-                <span className="text-op-navy">مرحباً {userProfile?.username || 'بك'}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={signOut}
-                  className="flex items-center gap-1 rtl:flex-row-reverse w-full"
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            className="lg:hidden bg-op-navy bg-opacity-95 backdrop-filter backdrop-blur-lg"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="container mx-auto px-4 py-4 flex flex-col space-y-4 rtl">
+              <Link
+                to="/"
+                className="text-white hover:text-op-yellow transition-colors py-2"
+              >
+                الرئيسية
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/manga"
+                    className="text-white hover:text-op-yellow transition-colors py-2"
+                  >
+                    مانجا ون بيس
+                  </Link>
+                  <Link
+                    to="/quiz"
+                    className="text-white hover:text-op-yellow transition-colors py-2"
+                  >
+                    اختبار المعرفة
+                  </Link>
+                  <Link
+                    to="/rooms"
+                    className="text-white hover:text-op-yellow transition-colors py-2"
+                  >
+                    الغرف
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="text-white hover:text-op-yellow transition-colors py-2"
+                  >
+                    الملف الشخصي
+                  </Link>
+                </>
+              )}
+              <Link
+                to="/leaderboard"
+                className="text-white hover:text-op-yellow transition-colors py-2"
+              >
+                المتصدرون
+              </Link>
+              
+              {isAuthenticated ? (
+                <div className="py-2">
+                  <UserMenu />
+                </div>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="bg-op-yellow text-op-navy px-4 py-2 rounded-md font-medium hover:bg-op-straw transition-colors inline-block text-center"
                 >
-                  <LogOut size={16} />
-                  <span>تسجيل خروج</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center space-y-2 w-full px-6 pt-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleLoginClick}
-                  className="flex items-center gap-1 rtl:flex-row-reverse w-full"
-                >
-                  <LogIn size={16} />
-                  <span>تسجيل دخول</span>
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={handleSignupClick}
-                  className="flex items-center gap-1 rtl:flex-row-reverse w-full"
-                >
-                  <UserPlus size={16} />
-                  <span>حساب جديد</span>
-                </Button>
-              </div>
-            )}
-          </nav>
-        </div>
-      )}
-    </header>
+                  تسجيل الدخول
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
   );
 };
 

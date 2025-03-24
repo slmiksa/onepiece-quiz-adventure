@@ -1,12 +1,30 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import PlayerSetup, { Player } from '../components/PlayerSetup';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const QuizGame: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  
+  // Check if coming from profile with room ID
+  const queryParams = new URLSearchParams(location.search);
+  const roomId = queryParams.get('roomId');
+  
+  useEffect(() => {
+    // If we have a roomId, navigate directly to the room
+    if (roomId) {
+      navigate(`/room/${roomId}`);
+    } else {
+      setLoading(false);
+    }
+  }, [roomId, navigate]);
   
   const handlePlayersSubmit = (players: Player[], difficulty: string) => {
     // Store the players and difficulty in sessionStorage
@@ -16,6 +34,16 @@ const QuizGame: React.FC = () => {
     // Navigate to the quiz gameplay page
     navigate('/play');
   };
+  
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
+          <div className="animate-spin h-10 w-10 border-4 border-op-yellow border-t-transparent rounded-full"></div>
+        </div>
+      </Layout>
+    );
+  }
   
   return (
     <Layout>
