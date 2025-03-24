@@ -80,11 +80,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       setMessages(messagesWithUserDetails);
     } catch (error: any) {
       console.error('Error fetching messages:', error);
-      toast({
-        title: 'خطأ',
-        description: 'حدث خطأ أثناء جلب الرسائل',
-        variant: 'destructive',
-      });
+      // Removed toast notification for fetch errors
     } finally {
       setLoading(false);
     }
@@ -137,11 +133,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
                 console.error("Could not play notification sound:", err);
               });
               
-              // Show toast notification
-              toast({
-                title: 'رسالة جديدة',
-                description: `${userData?.username}: ${payload.new.message.substring(0, 30)}${payload.new.message.length > 30 ? '...' : ''}`,
-              });
+              // Removed toast notification for new messages
             }
           } catch (error) {
             console.error('Error processing new message:', error);
@@ -153,7 +145,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, user?.id, toast]);
+  }, [roomId, user?.id]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -182,19 +174,10 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       // Clear input
       setNewMessage('');
       
-      // Show success toast
-      toast({
-        title: 'تم الإرسال',
-        description: 'تم إرسال رسالتك بنجاح',
-        variant: 'default',
-      });
+      // Removed success toast notification
     } catch (error: any) {
       console.error('Error sending message:', error);
-      toast({
-        title: 'خطأ',
-        description: 'حدث خطأ أثناء إرسال الرسالة',
-        variant: 'destructive',
-      });
+      // Removed error toast notification
     } finally {
       setSendingMessage(false);
     }
