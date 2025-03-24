@@ -25,15 +25,15 @@ const UserMenu: React.FC = () => {
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className="relative h-12 w-12 rounded-full bg-op-yellow ring-2 ring-white hover:bg-op-straw transition-all"
+          className="relative h-12 w-12 rounded-full bg-op-blue ring-2 ring-white hover:bg-op-ocean transition-all"
         >
           <Avatar className="h-10 w-10 border-2 border-white">
             <AvatarImage src={user.user_metadata?.avatar || ''} />
-            <AvatarFallback className="bg-op-ocean text-white">
+            <AvatarFallback className="bg-op-yellow text-op-navy">
               {userProfile?.username?.substring(0, 2) || user.email?.substring(0, 2) || 'OP'}
             </AvatarFallback>
           </Avatar>
-          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-op-blue text-white text-xs">
+          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-op-yellow text-op-navy text-xs">
             <UserCircle size={14} />
           </span>
         </Button>

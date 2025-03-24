@@ -116,7 +116,7 @@ const RoomPage: React.FC = () => {
                     onClick={copyRoomLink} 
                     variant="outline" 
                     size="sm" 
-                    className="bg-op-yellow text-op-navy hover:bg-op-straw border-none transition-all"
+                    className="bg-op-blue text-white hover:bg-op-ocean border-none transition-all"
                   >
                     <Copy size={16} className="mr-1" />
                     {isCopied ? 'تم النسخ' : 'نسخ الرابط'}
@@ -126,7 +126,7 @@ const RoomPage: React.FC = () => {
                     onClick={shareRoomLink}
                     variant="outline"
                     size="sm"
-                    className="bg-op-blue text-white hover:bg-op-ocean border-none transition-all"
+                    className="bg-op-yellow text-op-navy hover:bg-op-straw border-none transition-all"
                   >
                     <Share2 size={16} className="mr-1" />
                     مشاركة

@@ -68,6 +68,8 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         
       if (playersError) throw playersError;
       
+      console.log('Fetched players:', playersData);
+      
       // Add is_owner flag
       const playersWithOwner = playersData.map(player => ({
         ...player,
@@ -80,6 +82,9 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       const currentPlayer = playersWithOwner.find(p => p.user_id === user?.id);
       if (currentPlayer) {
         setIsReady(currentPlayer.ready);
+      } else if (user) {
+        // User is not in the room yet, join automatically
+        joinRoom();
       }
       
       // If room status is 'playing', trigger onGameStart
@@ -99,12 +104,62 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
     }
   };
 
+  const joinRoom = async () => {
+    if (!user) return;
+    
+    try {
+      // Check if user is already in the room
+      const { data: existingPlayer, error: checkError } = await supabase
+        .from('room_players')
+        .select('*')
+        .eq('room_id', roomId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('Error checking if user is in room:', checkError);
+        return;
+      }
+      
+      if (existingPlayer) {
+        console.log('User already in room');
+        return;
+      }
+      
+      // Add user to room
+      const { error: joinError } = await supabase
+        .from('room_players')
+        .insert({
+          room_id: roomId,
+          user_id: user.id,
+          ready: false
+        });
+        
+      if (joinError) {
+        console.error('Error joining room:', joinError);
+        toast({
+          title: 'خطأ',
+          description: 'حدث خطأ أثناء الانضمام إلى الغرفة',
+          variant: 'destructive',
+        });
+      } else {
+        console.log('User joined room successfully');
+        toast({
+          title: 'تم الانضمام',
+          description: 'تم انضمامك إلى الغرفة بنجاح',
+        });
+      }
+    } catch (error) {
+      console.error('Exception joining room:', error);
+    }
+  };
+
   useEffect(() => {
     fetchRoomAndPlayers();
     
-    // Subscribe to player changes
-    const playersSubscription = supabase
-      .channel('schema-db-changes')
+    // Set up realtime subscriptions
+    const channel = supabase
+      .channel('room-changes')
       .on(
         'postgres_changes',
         {
@@ -113,7 +168,8 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           table: 'room_players',
           filter: `room_id=eq.${roomId}`,
         },
-        () => {
+        (payload) => {
+          console.log('Room players change detected:', payload);
           fetchRoomAndPlayers();
         }
       )
@@ -126,6 +182,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           filter: `id=eq.${roomId}`,
         },
         (payload) => {
+          console.log('Room change detected:', payload);
           if (payload.new && typeof payload.new === 'object' && 'status' in payload.new) {
             setRoom(payload.new as Room);
             
@@ -139,9 +196,9 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       .subscribe();
       
     return () => {
-      supabase.removeChannel(playersSubscription);
+      supabase.removeChannel(channel);
     };
-  }, [roomId]);
+  }, [roomId, user?.id]);
 
   const toggleReady = async () => {
     if (!user) return;
@@ -239,7 +296,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
             onClick={copyRoomLink}
             variant="outline"
             size="sm"
-            className="text-white border-white hover:bg-white hover:bg-opacity-10 flex items-center gap-1"
+            className="text-white border-white hover:bg-white hover:bg-opacity-10 flex items-center gap-1 bg-op-blue"
           >
             {isCopied ? <Check size={16} /> : <Copy size={16} />}
             <span>{isCopied ? 'تم النسخ' : 'نسخ الرابط'}</span>
@@ -247,7 +304,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           <Button
             variant="outline"
             size="sm"
-            className="text-white border-white hover:bg-white hover:bg-opacity-10"
+            className="text-white border-white hover:bg-white hover:bg-opacity-10 bg-op-blue"
             onClick={() => {
               if (navigator.share) {
                 navigator.share({

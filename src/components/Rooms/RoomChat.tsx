@@ -63,9 +63,9 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
   useEffect(() => {
     fetchMessages();
     
-    // Subscribe to new messages
-    const messageSubscription = supabase
-      .channel('schema-db-changes')
+    // Set up realtime subscription for new messages
+    const channel = supabase
+      .channel('room-messages')
       .on(
         'postgres_changes',
         {
@@ -74,40 +74,46 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
           table: 'room_messages',
           filter: `room_id=eq.${roomId}`,
         },
-        (payload) => {
+        async (payload) => {
+          console.log('New message received:', payload);
+          
           // Fetch complete message with user data
-          supabase
+          const { data, error } = await supabase
             .from('room_messages')
             .select(`
               *,
               users (username, avatar)
             `)
             .eq('id', payload.new.id)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                setMessages((prevMessages) => [...prevMessages, data]);
-                
-                // Play notification sound for messages from other users
-                if (data.user_id !== user?.id && notificationSoundRef.current) {
-                  notificationSoundRef.current.play().catch(err => {
-                    console.error("Could not play notification sound:", err);
-                  });
-                  
-                  // Show toast notification
-                  toast({
-                    title: 'رسالة جديدة',
-                    description: `${data.users.username}: ${data.message.substring(0, 30)}${data.message.length > 30 ? '...' : ''}`,
-                  });
-                }
-              }
-            });
+            .single();
+            
+          if (error) {
+            console.error('Error fetching new message details:', error);
+            return;
+          }
+          
+          if (data) {
+            setMessages((prevMessages) => [...prevMessages, data]);
+            
+            // Play notification sound for messages from other users
+            if (data.user_id !== user?.id && notificationSoundRef.current) {
+              notificationSoundRef.current.play().catch(err => {
+                console.error("Could not play notification sound:", err);
+              });
+              
+              // Show toast notification
+              toast({
+                title: 'رسالة جديدة',
+                description: `${data.users.username}: ${data.message.substring(0, 30)}${data.message.length > 30 ? '...' : ''}`,
+              });
+            }
+          }
         }
       )
       .subscribe();
       
     return () => {
-      supabase.removeChannel(messageSubscription);
+      supabase.removeChannel(channel);
     };
   }, [roomId, user?.id, toast]);
 
