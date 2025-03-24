@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +23,7 @@ interface Room {
 const RoomsList = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,6 +45,8 @@ const RoomsList = () => {
       
       if (error) throw error;
       
+      console.log('Fetched rooms:', data);
+      
       const formattedRooms = data.map((room) => ({
         ...room,
         owner_username: room.users?.username,
@@ -60,7 +63,13 @@ const RoomsList = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const refreshRooms = () => {
+    setRefreshing(true);
+    fetchRooms();
   };
 
   useEffect(() => {
@@ -76,7 +85,8 @@ const RoomsList = () => {
           schema: 'public',
           table: 'rooms',
         },
-        () => {
+        (payload) => {
+          console.log('Room change detected:', payload);
           fetchRooms();
         }
       )
@@ -87,7 +97,8 @@ const RoomsList = () => {
           schema: 'public',
           table: 'room_players',
         },
-        () => {
+        (payload) => {
+          console.log('Room players change detected:', payload);
           fetchRooms();
         }
       )
@@ -158,7 +169,7 @@ const RoomsList = () => {
     visible: { opacity: 1, y: 0 }
   };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <div className="text-center py-10">
         <div className="animate-pulse text-white">جاري تحميل الغرف المتاحة...</div>
@@ -170,13 +181,23 @@ const RoomsList = () => {
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-white">الغرف المتاحة</h2>
-        <Button 
-          onClick={handleCreateRoom}
-          className="bg-op-yellow text-op-navy hover:bg-op-straw flex items-center gap-2"
-        >
-          <Plus size={18} />
-          إنشاء غرفة
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={refreshRooms}
+            variant="outline"
+            className="bg-white text-op-navy hover:bg-gray-100 border-none"
+            disabled={refreshing}
+          >
+            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'تحديث'}
+          </Button>
+          <Button 
+            onClick={handleCreateRoom}
+            className="bg-op-yellow text-op-navy hover:bg-op-straw flex items-center gap-2"
+          >
+            <Plus size={18} />
+            إنشاء غرفة
+          </Button>
+        </div>
       </div>
       
       {rooms.length === 0 ? (

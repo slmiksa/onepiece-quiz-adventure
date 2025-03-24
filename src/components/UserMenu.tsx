@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, Settings, UserCircle } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
   const { user, userProfile, signOut } = useAuth();
@@ -23,13 +23,19 @@ const UserMenu: React.FC = () => {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10 border border-white">
+        <Button 
+          variant="ghost" 
+          className="relative h-12 w-12 rounded-full bg-op-yellow ring-2 ring-white hover:bg-op-straw transition-all"
+        >
+          <Avatar className="h-10 w-10 border-2 border-white">
             <AvatarImage src={user.user_metadata?.avatar || ''} />
             <AvatarFallback className="bg-op-ocean text-white">
               {userProfile?.username?.substring(0, 2) || user.email?.substring(0, 2) || 'OP'}
             </AvatarFallback>
           </Avatar>
+          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-op-blue text-white text-xs">
+            <UserCircle size={14} />
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 rtl" align="end">

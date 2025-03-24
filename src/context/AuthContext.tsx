@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User, AuthChangeEvent } from '@supabase/supabase-js'; // Make sure AuthChangeEvent is imported
+import { Session, User } from '@supabase/supabase-js'; 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { sendWelcomeEmail } from '@/utils/supabaseHelpers';
