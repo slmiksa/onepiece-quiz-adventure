@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js'; 
+import { Session, User, AuthChangeEvent } from '@supabase/supabase-js'; 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { sendWelcomeEmail } from '@/utils/supabaseHelpers';
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session) => {
         console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         
         // إرسال بريد ترحيبي للمستخدمين الجدد
-        if (event === 'SIGNED_UP') {
+        if (event === 'SIGNED_UP' as AuthChangeEvent) {
           console.log('Sending welcome email to new user:', session?.user?.email);
           try {
             if (session?.user) {
