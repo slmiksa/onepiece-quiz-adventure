@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         
         // إرسال بريد ترحيبي للمستخدمين الجدد
-        if (event === 'SIGNED_UP' && session?.user) {
+        if (event === 'SIGNED_UP' as AuthChangeEvent && session?.user) {
           console.log('Sending welcome email to new user:', session.user.email);
           try {
             await sendWelcomeEmail(
