@@ -77,7 +77,7 @@ export const supabase = createClient<Database>(
     const status = await channel.subscribe();
     console.log(`Realtime subscriptions status: ${status}`);
     
-    // Fix the comparison by checking the status value correctly
+    // Fix the comparison by checking the status type correctly
     if (status === 'SUBSCRIBED') {
       console.log('Realtime subscriptions enabled for rooms tables');
     } else if (status === 'CHANNEL_ERROR') {
