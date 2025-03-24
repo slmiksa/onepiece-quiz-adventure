@@ -79,6 +79,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (error) {
             console.error('Failed to send welcome email:', error);
           }
+        } else if (event === 'USER_UPDATED' as AuthChangeEvent) {
+          toast({
+            title: "تم تحديث البيانات",
+            description: "تم تحديث بيانات حسابك بنجاح",
+          });
+        } else if (event === 'SIGNED_IN' as AuthChangeEvent) {
+          toast({
+            title: "تم تسجيل الدخول",
+            description: "مرحبًا بعودتك!",
+          });
         }
       }
     );

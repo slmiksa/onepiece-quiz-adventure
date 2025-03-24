@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from 'lucide-react';
 
 enum AuthMode {
   SIGN_IN = 'sign_in',
@@ -40,12 +42,21 @@ const AuthForm: React.FC = () => {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Clear error when mode changes
+  useEffect(() => {
+    setFormError(null);
+    setConfirmationSent(false);
+  }, [mode]);
 
   const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
 
     try {
       if (adminEmail === 's34009058@gmail.com' && adminPassword === 'admin') {
@@ -62,11 +73,7 @@ const AuthForm: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Admin login error:', error);
-      toast({
-        title: 'خطأ',
-        description: error.message || 'حدث خطأ أثناء تسجيل دخول المسؤول',
-        variant: 'destructive',
-      });
+      setFormError(error.message || 'حدث خطأ أثناء تسجيل دخول المسؤول');
     } finally {
       setLoading(false);
     }
@@ -75,6 +82,8 @@ const AuthForm: React.FC = () => {
   const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
+    setConfirmationSent(false);
 
     try {
       if (mode === AuthMode.SIGN_UP) {
@@ -92,19 +101,26 @@ const AuthForm: React.FC = () => {
 
         if (error) throw error;
 
+        setConfirmationSent(true);
         toast({
           title: 'تم التسجيل بنجاح',
-          description: 'تم إرسال بريد إلكتروني ترحيبي لك! يمكنك الآن تسجيل الدخول',
+          description: 'تم إرسال بريد إلكتروني ترحيبي لك! يُرجى تأكيد بريدك الإلكتروني للمتابعة',
         });
 
-        setMode(AuthMode.SIGN_IN);
+        // Don't switch to sign in mode, let user see confirmation message
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('Email not confirmed')) {
+            setFormError('لم يتم تأكيد البريد الإلكتروني. يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد');
+            return;
+          }
+          throw error;
+        }
 
         toast({
           title: 'تم تسجيل الدخول بنجاح',
@@ -115,11 +131,60 @@ const AuthForm: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error:', error);
-      toast({
-        title: 'خطأ',
-        description: error.message || 'حدث خطأ أثناء المصادقة',
-        variant: 'destructive',
+      setFormError(error.message || 'حدث خطأ أثناء المصادقة');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderErrorMessage = () => {
+    if (!formError) return null;
+    
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>خطأ</AlertTitle>
+        <AlertDescription>{formError}</AlertDescription>
+      </Alert>
+    );
+  };
+
+  const renderConfirmationMessage = () => {
+    if (!confirmationSent) return null;
+    
+    return (
+      <Alert className="mb-4 bg-green-50 border-green-500 text-green-800">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>تم إرسال رسالة التأكيد</AlertTitle>
+        <AlertDescription>
+          لقد أرسلنا بريدًا إلكترونيًا للتأكيد إلى {email}. يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد للمتابعة.
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setFormError('يرجى إدخال البريد الإلكتروني أولاً');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
       });
+
+      if (error) throw error;
+
+      toast({
+        title: 'تم إعادة الإرسال',
+        description: 'تم إعادة إرسال رابط التأكيد إلى بريدك الإلكتروني',
+      });
+    } catch (error: any) {
+      console.error('Error resending confirmation:', error);
+      setFormError(error.message || 'حدث خطأ أثناء إعادة إرسال التأكيد');
     } finally {
       setLoading(false);
     }
@@ -157,6 +222,9 @@ const AuthForm: React.FC = () => {
           </TabsTrigger>
         </TabsList>
         
+        {renderErrorMessage()}
+        {renderConfirmationMessage()}
+        
         <TabsContent value="sign_in">
           <form onSubmit={handleUserSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
@@ -192,6 +260,18 @@ const AuthForm: React.FC = () => {
             >
               {loading ? 'جاري التحميل...' : 'تسجيل الدخول'}
             </Button>
+
+            {formError && formError.includes('تأكيد البريد') && (
+              <Button 
+                type="button" 
+                variant="outline"
+                className="w-full mt-2"
+                onClick={handleResendConfirmation}
+                disabled={loading}
+              >
+                إعادة إرسال رابط التأكيد
+              </Button>
+            )}
           </form>
         </TabsContent>
         
