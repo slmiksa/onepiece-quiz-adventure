@@ -117,15 +117,19 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
               
             if (userError) throw userError;
             
-            const newMessage = {
-              ...payload.new,
+            // Create a properly typed newMessage object that conforms to ChatMessage interface
+            const newMessageObject: ChatMessage = {
+              id: payload.new.id,
+              user_id: payload.new.user_id,
+              message: payload.new.message,
+              created_at: payload.new.created_at,
               user_details: {
                 username: userData?.username || 'Unknown User',
                 avatar: userData?.avatar || ''
               }
             };
             
-            setMessages(prevMessages => [...prevMessages, newMessage]);
+            setMessages(prevMessages => [...prevMessages, newMessageObject]);
             
             // Play notification sound for messages from other users
             if (payload.new.user_id !== user?.id && notificationSoundRef.current) {
