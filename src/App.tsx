@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/Index";
 import MangaNews from "./pages/MangaNews";
+import MangaEpisodePage from "./pages/MangaEpisodePage";
 import QuizGame from "./pages/QuizGame";
 import PlayQuiz from "./pages/PlayQuiz";
 import Leaderboard from "./pages/Leaderboard";
@@ -45,6 +46,11 @@ const App = () => (
               <Route path="/manga" element={
                 <AuthenticatedRoute>
                   <MangaNews />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/manga/episode/:episodeId" element={
+                <AuthenticatedRoute>
+                  <MangaEpisodePage />
                 </AuthenticatedRoute>
               } />
               <Route path="/profile" element={

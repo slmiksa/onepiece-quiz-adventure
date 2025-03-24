@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
@@ -62,18 +62,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         
         // إرسال بريد ترحيبي للمستخدمين الجدد
-        if (event === 'SIGNED_UP' as AuthChangeEvent && session?.user) {
-          console.log('Sending welcome email to new user:', session.user.email);
+        if (event === 'SIGNED_UP') {
+          console.log('Sending welcome email to new user:', session?.user?.email);
           try {
-            await sendWelcomeEmail(
-              session.user.email || '', 
-              session.user.user_metadata?.username || 'مستخدم جديد'
-            );
-            
-            toast({
-              title: "مرحبًا بك!",
-              description: "تم إرسال بريد ترحيبي إلى عنوان بريدك الإلكتروني",
-            });
+            if (session?.user) {
+              await sendWelcomeEmail(
+                session.user.email || '', 
+                session.user.user_metadata?.username || 'مستخدم جديد'
+              );
+              
+              toast({
+                title: "مرحبًا بك!",
+                description: "تم إرسال بريد ترحيبي إلى عنوان بريدك الإلكتروني",
+              });
+            }
           } catch (error) {
             console.error('Failed to send welcome email:', error);
           }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { motion } from 'framer-motion';
 import { BookMarked, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface MangaItem {
   id: number;
@@ -24,7 +25,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1084,
       releaseDate: '2023-06-01',
       summary: 'في الحلقة الجديدة، يواجه لوفي كايدو في معركة ملحمية ستحدد مصير وانو.',
-      link: '#'
+      link: '/manga/episode/1084'
     },
     {
       id: 2,
@@ -33,7 +34,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1083,
       releaseDate: '2023-05-25',
       summary: 'ظهور مفاجئ لشخصية جديدة ذات قوى هائلة قد تغير مسار الأحداث بشكل كامل.',
-      link: '#'
+      link: '/manga/episode/1083'
     },
     {
       id: 3,
@@ -42,7 +43,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1082,
       releaseDate: '2023-05-18',
       summary: 'تلميحات جديدة حول طبيعة كنز الون بيس وارتباطه بالقرن المفقود من التاريخ.',
-      link: '#'
+      link: '/manga/episode/1082'
     },
     {
       id: 4,
@@ -51,7 +52,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1081,
       releaseDate: '2023-05-11',
       summary: 'زورو يتدرب على تقنية جديدة للسيوف قد تساعده في المعارك القادمة ضد أقوى خصومه.',
-      link: '#'
+      link: '/manga/episode/1081'
     },
     {
       id: 5,
@@ -60,7 +61,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1080,
       releaseDate: '2023-05-04',
       summary: 'سانجي يكتشف المزيد من أسرار عائلة فينسموك وقدراته الخاصة المخفية.',
-      link: '#'
+      link: '/manga/episode/1080'
     },
     {
       id: 6,
@@ -69,7 +70,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1079,
       releaseDate: '2023-04-27',
       summary: 'قراصنة قبعة القش يواجهون قراصنة البيست في معركة بحرية مليئة بالمفاجآت.',
-      link: '#'
+      link: '/manga/episode/1079'
     },
     {
       id: 7,
@@ -78,7 +79,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1078,
       releaseDate: '2023-04-20',
       summary: 'تحالفات جديدة تتشكل بين مجموعات القراصنة لمواجهة تهديد الحكومة العالمية.',
-      link: '#'
+      link: '/manga/episode/1078'
     },
     {
       id: 8,
@@ -87,7 +88,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1077,
       releaseDate: '2023-04-13',
       summary: 'نيكو روبن تكتشف نقوشاً قديمة تحمل معلومات هامة عن سلاح أورانوس.',
-      link: '#'
+      link: '/manga/episode/1077'
     },
     {
       id: 9,
@@ -96,7 +97,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1076,
       releaseDate: '2023-04-06',
       summary: 'الطاقم يصل إلى جزيرة غامضة تحكمها قوانين غريبة تتعلق بالجاذبية.',
-      link: '#'
+      link: '/manga/episode/1076'
     },
     {
       id: 10,
@@ -105,7 +106,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1075,
       releaseDate: '2023-03-30',
       summary: 'فرانكي يكمل اختراعاً جديداً سيحول سفينة ثاوزند صني إلى قوة هجومية رهيبة.',
-      link: '#'
+      link: '/manga/episode/1075'
     },
     {
       id: 11,
@@ -114,7 +115,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1074,
       releaseDate: '2023-03-23',
       summary: 'نامي تستخدم معلومات جديدة لرسم خريطة أكثر دقة لجزء من العالم الجديد.',
-      link: '#'
+      link: '/manga/episode/1074'
     },
     {
       id: 12,
@@ -123,7 +124,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1073,
       releaseDate: '2023-03-16',
       summary: 'بعد سنوات من الانتظار، لوفي يلتقي مجدداً مع شانكس في ظروف غير متوقعة.',
-      link: '#'
+      link: '/manga/episode/1073'
     },
     {
       id: 13,
@@ -132,7 +133,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1072,
       releaseDate: '2023-03-09',
       summary: 'بروك يكتشف قدرات جديدة لقوة فاكهة الشيطان الخاصة به تمكنه من رؤية عالم الأرواح.',
-      link: '#'
+      link: '/manga/episode/1072'
     },
     {
       id: 14,
@@ -141,7 +142,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1071,
       releaseDate: '2023-03-02',
       summary: 'جينبي يواجه قائد مجموعة السمك المرعب في قاع المحيط دفاعاً عن مملكة السمك.',
-      link: '#'
+      link: '/manga/episode/1071'
     },
     {
       id: 15,
@@ -150,7 +151,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1070,
       releaseDate: '2023-02-23',
       summary: 'كشف تفاصيل جديدة عن أحداث حرب ماربيلفورد وتأثيرها على المشهد السياسي الحالي.',
-      link: '#'
+      link: '/manga/episode/1070'
     },
     {
       id: 16,
@@ -159,7 +160,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1069,
       releaseDate: '2023-02-16',
       summary: 'تشوبر يطور دواءً يمكنه معالجة الآثار الجانبية لفاكهة الشيطان في ظروف معينة.',
-      link: '#'
+      link: '/manga/episode/1069'
     },
     {
       id: 17,
@@ -168,7 +169,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1068,
       releaseDate: '2023-02-09',
       summary: 'تفاصيل الصراع المستمر بين البحرية ومجموعة الشيشيبوكاي بعد حل النظام رسمياً.',
-      link: '#'
+      link: '/manga/episode/1068'
     },
     {
       id: 18,
@@ -177,7 +178,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1067,
       releaseDate: '2023-02-02',
       summary: 'أوسوب يطور ذخيرة جديدة لمقلاعه بمساعدة النباتات الغريبة التي جمعها من جزيرة بوين.',
-      link: '#'
+      link: '/manga/episode/1067'
     },
     {
       id: 19,
@@ -186,7 +187,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1066,
       releaseDate: '2023-01-26',
       summary: 'معلومات جديدة عن قوة الهاكي الملكي وكيفية تطويره للوصول إلى مستويات غير مسبوقة.',
-      link: '#'
+      link: '/manga/episode/1066'
     },
     {
       id: 20,
@@ -195,7 +196,7 @@ const MangaNews: React.FC = () => {
       episodeNumber: 1065,
       releaseDate: '2023-01-19',
       summary: 'تفاصيل القرارات المصيرية التي اتخذت في مؤتمر ريفيري وتأثيرها على النظام العالمي.',
-      link: '#'
+      link: '/manga/episode/1065'
     }
   ];
   
@@ -209,7 +210,7 @@ const MangaNews: React.FC = () => {
   
   return (
     <Layout>
-      <div className="min-h-screen pt-24 pb-16 bg-white">
+      <div className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-blue-50 to-blue-100">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center mb-12"
@@ -234,7 +235,7 @@ const MangaNews: React.FC = () => {
               {mangaItems.map((item, index) => (
                 <motion.article
                   key={item.id}
-                  className="bg-white/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all border border-gray-200"
+                  className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all border border-gray-200"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, duration: 0.5 }}
@@ -255,28 +256,28 @@ const MangaNews: React.FC = () => {
                   </div>
                   
                   <div className="p-5">
-                    <h2 className="text-xl font-bold text-white mb-2 line-clamp-1">{item.title}</h2>
+                    <h2 className="text-xl font-bold text-op-navy mb-2 line-clamp-1">{item.title}</h2>
                     
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center">
                         <BookMarked size={16} className="text-op-yellow mr-1" />
-                        <span className="text-white/70 text-sm">
+                        <span className="text-op-navy/70 text-sm">
                           {new Date(item.releaseDate).toLocaleDateString('ar-SA')}
                         </span>
                       </div>
                     </div>
                     
-                    <p className="text-white/60 mb-4 text-sm line-clamp-3">
+                    <p className="text-op-navy/70 mb-4 text-sm line-clamp-3">
                       {item.summary}
                     </p>
                     
-                    <a 
-                      href={item.link} 
+                    <Link 
+                      to={item.link} 
                       className="inline-flex items-center space-x-1 rtl:space-x-reverse text-op-yellow hover:text-op-straw"
                     >
                       <span>قراءة المزيد</span>
                       <ExternalLink size={14} />
-                    </a>
+                    </Link>
                   </div>
                 </motion.article>
               ))}
@@ -285,7 +286,7 @@ const MangaNews: React.FC = () => {
           
           <div className="flex justify-center mt-12">
             <nav className="flex items-center space-x-2 rtl:space-x-reverse">
-              <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-50">
+              <button className="p-2 rounded-full bg-op-navy/10 hover:bg-op-navy/20 text-op-navy disabled:opacity-50">
                 <ChevronRight className="h-5 w-5" />
               </button>
               
@@ -295,14 +296,14 @@ const MangaNews: React.FC = () => {
                   className={`h-8 w-8 flex items-center justify-center rounded-full ${
                     page === 1 
                       ? 'bg-op-yellow text-op-navy' 
-                      : 'bg-white/10 hover:bg-white/20 text-white'
+                      : 'bg-op-navy/10 hover:bg-op-navy/20 text-op-navy'
                   }`}
                 >
                   {page}
                 </button>
               ))}
               
-              <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
+              <button className="p-2 rounded-full bg-op-navy/10 hover:bg-op-navy/20 text-op-navy">
                 <ChevronLeft className="h-5 w-5" />
               </button>
             </nav>
