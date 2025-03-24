@@ -11,6 +11,11 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
+  userProfile: {
+    username?: string;
+    fullName?: string;
+    favoriteCharacter?: string;
+  } | null;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   loading: true,
   signOut: async () => {},
+  userProfile: null,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -27,6 +33,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<{
+    username?: string;
+    fullName?: string;
+    favoriteCharacter?: string;
+  } | null>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -35,6 +46,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Update user profile data when session changes
+        if (session?.user) {
+          const metadata = session.user.user_metadata;
+          setUserProfile({
+            username: metadata?.username,
+            fullName: metadata?.full_name,
+            favoriteCharacter: metadata?.favorite_character,
+          });
+        } else {
+          setUserProfile(null);
+        }
+        
         setLoading(false);
         
         // إرسال بريد ترحيبي للمستخدمين الجدد
@@ -59,6 +83,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Set initial user profile data if session exists
+      if (session?.user) {
+        const metadata = session.user.user_metadata;
+        setUserProfile({
+          username: metadata?.username,
+          fullName: metadata?.full_name,
+          favoriteCharacter: metadata?.favorite_character,
+        });
+      }
+      
       setLoading(false);
     });
 
@@ -83,7 +118,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAuthenticated: !!user, loading, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isAuthenticated: !!user, 
+      loading, 
+      signOut,
+      userProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );

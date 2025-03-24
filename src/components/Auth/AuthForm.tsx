@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 enum AuthMode {
   SIGN_IN = 'sign_in',
@@ -15,11 +16,27 @@ enum AuthMode {
   ADMIN = 'admin',
 }
 
+const onePieceCharacters = [
+  { name: "لوفي", value: "luffy" },
+  { name: "زورو", value: "zoro" },
+  { name: "نامي", value: "nami" },
+  { name: "سانجي", value: "sanji" },
+  { name: "تشوبر", value: "chopper" },
+  { name: "روبن", value: "robin" },
+  { name: "فرانكي", value: "franky" },
+  { name: "بروك", value: "brook" },
+  { name: "جينبي", value: "jinbe" },
+  { name: "آيس", value: "ace" },
+  { name: "شانكس", value: "shanks" }
+];
+
 const AuthForm: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>(AuthMode.SIGN_IN);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [favoriteCharacter, setFavoriteCharacter] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,9 +48,7 @@ const AuthForm: React.FC = () => {
     setLoading(true);
 
     try {
-      // Updated admin credentials check
       if (adminEmail === 's34009058@gmail.com' && adminPassword === 'admin') {
-        // Store admin status in localStorage
         localStorage.setItem('isAdmin', 'true');
         
         toast({
@@ -41,7 +56,6 @@ const AuthForm: React.FC = () => {
           description: 'مرحبًا بك في لوحة التحكم',
         });
         
-        // Navigate to admin dashboard
         navigate('/admin');
       } else {
         throw new Error('بيانات المسؤول غير صحيحة');
@@ -70,6 +84,8 @@ const AuthForm: React.FC = () => {
           options: {
             data: {
               username,
+              full_name: fullName,
+              favorite_character: favoriteCharacter,
             },
           },
         });
@@ -182,6 +198,19 @@ const AuthForm: React.FC = () => {
         <TabsContent value="sign_up">
           <form onSubmit={handleUserSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
+              <Label htmlFor="full-name" className="text-white">الاسم</Label>
+              <Input
+                id="full-name"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="أدخل اسمك الكامل"
+                required
+                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="username" className="text-white">اسم المستخدم</Label>
               <Input
                 id="username"
@@ -205,6 +234,26 @@ const AuthForm: React.FC = () => {
                 required
                 className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="favorite-character" className="text-white">الشخصية المحبوبة في انيمي ون بيس</Label>
+              <Select 
+                value={favoriteCharacter} 
+                onValueChange={setFavoriteCharacter}
+                required
+              >
+                <SelectTrigger className="bg-white bg-opacity-20 border-none text-white">
+                  <SelectValue placeholder="اختر شخصيتك المفضلة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {onePieceCharacters.map((character) => (
+                    <SelectItem key={character.value} value={character.value}>
+                      {character.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
