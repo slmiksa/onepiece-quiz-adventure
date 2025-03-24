@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, UserCircle } from 'lucide-react';
+import { User, LogOut, Settings, UserCircle, Home, Users } from 'lucide-react';
 
 const UserMenu: React.FC = () => {
   const { user, userProfile, signOut } = useAuth();
@@ -53,9 +53,21 @@ const UserMenu: React.FC = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/" className="cursor-pointer flex items-center justify-between">
+            <span>الصفحة الرئيسية</span>
+            <Home className="h-4 w-4" />
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer flex items-center justify-between">
             <span>الملف الشخصي</span>
             <User className="h-4 w-4" />
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/rooms" className="cursor-pointer flex items-center justify-between">
+            <span>الغرف</span>
+            <Users className="h-4 w-4" />
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

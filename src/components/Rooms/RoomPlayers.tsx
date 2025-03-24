@@ -11,7 +11,7 @@ interface RoomPlayer {
   id: string;
   user_id: string;
   ready: boolean;
-  users: {
+  user_details?: {
     username: string;
     avatar: string;
   };
@@ -24,6 +24,7 @@ interface Room {
   owner_id: string;
   difficulty: string;
   status: 'waiting' | 'playing' | 'finished';
+  max_players: number;
 }
 
 interface RoomPlayersProps {
@@ -57,29 +58,53 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       
       setRoom(roomData as Room);
       
-      // Get players with user details
+      // Get players
       const { data: playersData, error: playersError } = await supabase
         .from('room_players')
-        .select(`
-          *,
-          users (username, avatar)
-        `)
+        .select('*')
         .eq('room_id', roomId);
         
       if (playersError) throw playersError;
       
-      console.log('Fetched players:', playersData);
+      if (!playersData || playersData.length === 0) {
+        setPlayers([]);
+        setLoading(false);
+        // If the user is not in the room and is authenticated, join automatically
+        if (user) {
+          joinRoom();
+        }
+        return;
+      }
       
-      // Add is_owner flag
-      const playersWithOwner = playersData.map(player => ({
-        ...player,
-        is_owner: player.user_id === roomData.owner_id
-      }));
+      // Fetch user details for each player
+      const userIds = playersData.map(player => player.user_id);
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username, avatar')
+        .in('id', userIds);
+        
+      if (usersError) throw usersError;
       
-      setPlayers(playersWithOwner);
+      // Map user details to players
+      const playersWithUserDetails = playersData.map(player => {
+        const userDetail = usersData?.find(u => u.id === player.user_id);
+        return {
+          ...player,
+          user_details: userDetail ? {
+            username: userDetail.username,
+            avatar: userDetail.avatar
+          } : {
+            username: 'Unknown User',
+            avatar: ''
+          },
+          is_owner: player.user_id === roomData.owner_id
+        };
+      });
+      
+      setPlayers(playersWithUserDetails);
       
       // Check if current user is ready
-      const currentPlayer = playersWithOwner.find(p => p.user_id === user?.id);
+      const currentPlayer = playersWithUserDetails.find(p => p.user_id === user?.id);
       if (currentPlayer) {
         setIsReady(currentPlayer.ready);
       } else if (user) {
@@ -148,6 +173,8 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           title: 'تم الانضمام',
           description: 'تم انضمامك إلى الغرفة بنجاح',
         });
+        // Refresh players after joining
+        fetchRoomAndPlayers();
       }
     } catch (error) {
       console.error('Exception joining room:', error);
@@ -215,6 +242,10 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       if (error) throw error;
       
       setIsReady(newReadyState);
+      toast({
+        title: newReadyState ? 'أنت الآن مستعد' : 'تم إلغاء الاستعداد',
+        description: newReadyState ? 'تم تعيين حالتك كمستعد للعب' : 'تم إلغاء حالة الاستعداد',
+      });
     } catch (error: any) {
       console.error('Error toggling ready state:', error);
       toast({
@@ -247,6 +278,10 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
         
       if (error) throw error;
       
+      toast({
+        title: 'بدأت اللعبة',
+        description: 'تم بدء اللعبة بنجاح',
+      });
       // Game will start automatically due to subscription
     } catch (error: any) {
       console.error('Error starting game:', error);
@@ -334,7 +369,7 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
              'صعب'}
           </span>
           <span className="text-white mx-2">•</span>
-          <span className="text-white text-sm">{players.length} لاعبين</span>
+          <span className="text-white text-sm">{players.length} / {room.max_players} لاعبين</span>
         </div>
       </div>
       
@@ -343,12 +378,12 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
           <div key={player.id} className="flex items-center justify-between bg-white bg-opacity-5 p-3 rounded-lg rtl">
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src={player.users.avatar} alt={player.users.username} />
-                <AvatarFallback>{player.users.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={player.user_details?.avatar} alt={player.user_details?.username} />
+                <AvatarFallback>{player.user_details?.username?.slice(0, 2).toUpperCase() || 'OP'}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-white">{player.users.username}</span>
+                  <span className="font-medium text-white">{player.user_details?.username || 'Unknown User'}</span>
                   {player.is_owner && (
                     <span className="bg-op-yellow text-op-navy text-xs px-2 py-0.5 rounded">المضيف</span>
                   )}

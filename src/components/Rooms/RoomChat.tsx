@@ -14,7 +14,7 @@ interface ChatMessage {
   user_id: string;
   message: string;
   created_at: string;
-  users: {
+  user_details?: {
     username: string;
     avatar: string;
   };
@@ -36,18 +36,48 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
 
   const fetchMessages = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      
+      // First fetch messages
+      const { data: messagesData, error: messagesError } = await supabase
         .from('room_messages')
-        .select(`
-          *,
-          users (username, avatar)
-        `)
+        .select('*')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
         
-      if (error) throw error;
+      if (messagesError) throw messagesError;
       
-      setMessages(data);
+      if (!messagesData || messagesData.length === 0) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Then fetch user details for each message
+      const userIds = [...new Set(messagesData.map(msg => msg.user_id))];
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username, avatar')
+        .in('id', userIds);
+        
+      if (usersError) throw usersError;
+      
+      // Map user details to messages
+      const messagesWithUserDetails = messagesData.map(message => {
+        const userDetail = usersData?.find(u => u.id === message.user_id);
+        return {
+          ...message,
+          user_details: userDetail ? {
+            username: userDetail.username,
+            avatar: userDetail.avatar
+          } : {
+            username: 'Unknown User',
+            avatar: ''
+          }
+        };
+      });
+      
+      setMessages(messagesWithUserDetails);
     } catch (error: any) {
       console.error('Error fetching messages:', error);
       toast({
@@ -77,26 +107,28 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
         async (payload) => {
           console.log('New message received:', payload);
           
-          // Fetch complete message with user data
-          const { data, error } = await supabase
-            .from('room_messages')
-            .select(`
-              *,
-              users (username, avatar)
-            `)
-            .eq('id', payload.new.id)
-            .single();
+          try {
+            // Fetch the user details for this message
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('username, avatar')
+              .eq('id', payload.new.user_id)
+              .single();
+              
+            if (userError) throw userError;
             
-          if (error) {
-            console.error('Error fetching new message details:', error);
-            return;
-          }
-          
-          if (data) {
-            setMessages((prevMessages) => [...prevMessages, data]);
+            const newMessage = {
+              ...payload.new,
+              user_details: {
+                username: userData?.username || 'Unknown User',
+                avatar: userData?.avatar || ''
+              }
+            };
+            
+            setMessages(prevMessages => [...prevMessages, newMessage]);
             
             // Play notification sound for messages from other users
-            if (data.user_id !== user?.id && notificationSoundRef.current) {
+            if (payload.new.user_id !== user?.id && notificationSoundRef.current) {
               notificationSoundRef.current.play().catch(err => {
                 console.error("Could not play notification sound:", err);
               });
@@ -104,9 +136,11 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
               // Show toast notification
               toast({
                 title: 'رسالة جديدة',
-                description: `${data.users.username}: ${data.message.substring(0, 30)}${data.message.length > 30 ? '...' : ''}`,
+                description: `${userData?.username}: ${payload.new.message.substring(0, 30)}${payload.new.message.length > 30 ? '...' : ''}`,
               });
             }
+          } catch (error) {
+            console.error('Error processing new message:', error);
           }
         }
       )
@@ -194,11 +228,11 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
                 className={`flex items-start gap-3 ${msg.user_id === user?.id ? 'justify-start' : 'justify-start'}`}
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={msg.users.avatar} alt={msg.users.username} />
-                  <AvatarFallback>{msg.users.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={msg.user_details?.avatar} alt={msg.user_details?.username} />
+                  <AvatarFallback>{msg.user_details?.username?.slice(0, 2).toUpperCase() || 'UN'}</AvatarFallback>
                 </Avatar>
                 <div className={`max-w-[75%] ${msg.user_id === user?.id ? 'bg-op-blue' : 'bg-op-deep-sea'} p-3 rounded-lg`}>
-                  <div className="font-semibold text-white text-xs mb-1">{msg.users.username}</div>
+                  <div className="font-semibold text-white text-xs mb-1">{msg.user_details?.username || 'Unknown User'}</div>
                   <p className="text-white break-words whitespace-pre-wrap">{msg.message}</p>
                   <div className="text-xs text-gray-300 mt-1 text-left">
                     {new Date(msg.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}

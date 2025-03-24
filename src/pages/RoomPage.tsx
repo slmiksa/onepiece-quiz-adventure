@@ -7,15 +7,50 @@ import RoomChat from '../components/Rooms/RoomChat';
 import { motion } from 'framer-motion';
 import AuthenticatedRoute from '@/components/AuthenticatedRoute';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2 } from 'lucide-react';
+import { Copy, Share2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const RoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [roomExists, setRoomExists] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  // Verify room exists
+  useEffect(() => {
+    const checkRoom = async () => {
+      if (!roomId) {
+        setRoomExists(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('rooms')
+          .select('id')
+          .eq('id', roomId)
+          .single();
+
+        if (error || !data) {
+          setRoomExists(false);
+        } else {
+          setRoomExists(true);
+        }
+      } catch (error) {
+        console.error('Error checking room:', error);
+        setRoomExists(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkRoom();
+  }, [roomId]);
 
   // Reset copy state after 2 seconds
   useEffect(() => {
@@ -84,12 +119,37 @@ const RoomPage: React.FC = () => {
     }
   };
 
-  if (!roomId) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="min-h-screen pt-24 pb-16 quiz-container">
-          <div className="container mx-auto px-4 text-center text-white">
-            غرفة غير موجودة
+          <div className="container mx-auto px-4 flex justify-center items-center">
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <p>جاري التحميل...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!roomId || !roomExists) {
+    return (
+      <Layout>
+        <div className="min-h-screen pt-24 pb-16 quiz-container">
+          <div className="container mx-auto px-4 text-center">
+            <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg border border-opacity-20 border-white shadow-glass p-10 max-w-md mx-auto">
+              <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-4">الغرفة غير موجودة</h2>
+              <p className="text-white mb-6">الغرفة التي تحاول الوصول إليها غير موجودة أو تم حذفها.</p>
+              <Button 
+                onClick={() => navigate('/rooms')}
+                className="bg-op-blue text-white hover:bg-op-ocean"
+              >
+                العودة إلى قائمة الغرف
+              </Button>
+            </div>
           </div>
         </div>
       </Layout>

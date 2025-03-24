@@ -20,6 +20,11 @@ interface Room {
   player_count?: number;
 }
 
+interface User {
+  id: string;
+  username: string;
+}
+
 const RoomsList = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,28 +37,62 @@ const RoomsList = () => {
     try {
       setLoading(true);
       
-      // Fetch rooms with owner username and player count
-      const { data, error } = await supabase
+      // First fetch all rooms with waiting status
+      const { data: roomsData, error: roomsError } = await supabase
         .from('rooms')
-        .select(`
-          *,
-          users!rooms_owner_id_fkey (username),
-          room_players (count)
-        `)
+        .select('*')
         .eq('status', 'waiting')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (roomsError) throw roomsError;
       
-      console.log('Fetched rooms:', data);
+      if (!roomsData || roomsData.length === 0) {
+        setRooms([]);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
       
-      const formattedRooms = data.map((room) => ({
+      // Get all owner IDs
+      const ownerIds = roomsData.map(room => room.owner_id);
+      
+      // Fetch usernames for owners
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username')
+        .in('id', ownerIds);
+      
+      if (usersError) throw usersError;
+      
+      // Create a map of user IDs to usernames
+      const userMap = new Map<string, string>();
+      usersData?.forEach((user: User) => {
+        userMap.set(user.id, user.username);
+      });
+      
+      // Fetch player counts for each room
+      const playerCounts = new Map<string, number>();
+      
+      for (const room of roomsData) {
+        const { data: playersData, error: playersError } = await supabase
+          .from('room_players')
+          .select('id', { count: 'exact' })
+          .eq('room_id', room.id);
+        
+        if (!playersError) {
+          playerCounts.set(room.id, playersData?.length || 0);
+        }
+      }
+      
+      // Map rooms with owner usernames and player counts
+      const formattedRooms = roomsData.map(room => ({
         ...room,
-        owner_username: room.users?.username,
-        player_count: room.room_players[0]?.count || 0
+        owner_username: userMap.get(room.owner_id) || 'Unknown User',
+        player_count: playerCounts.get(room.id) || 0
       }));
       
       setRooms(formattedRooms);
+      
     } catch (error: any) {
       console.error('Error fetching rooms:', error);
       toast({
@@ -111,34 +150,15 @@ const RoomsList = () => {
 
   const handleJoinRoom = async (roomId: string) => {
     try {
-      if (!user) return;
-      
-      // Check if user already in room
-      const { data: existingPlayer, error: checkError } = await supabase
-        .from('room_players')
-        .select('*')
-        .eq('room_id', roomId)
-        .eq('user_id', user.id)
-        .single();
-        
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-      
-      if (existingPlayer) {
-        // User already in room, just navigate
-        navigate(`/room/${roomId}`);
+      if (!user) {
+        toast({
+          title: 'يرجى تسجيل الدخول',
+          description: 'يجب عليك تسجيل الدخول للانضمام إلى الغرفة',
+          variant: 'destructive',
+        });
         return;
       }
       
-      // Add user to room
-      const { error: joinError } = await supabase
-        .from('room_players')
-        .insert({ room_id: roomId, user_id: user.id });
-        
-      if (joinError) throw joinError;
-      
-      // Navigate to room
       navigate(`/room/${roomId}`);
     } catch (error: any) {
       console.error('Error joining room:', error);
