@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Check, Copy, Share2, RefreshCw, Loader2, Users } from 'lucide-react';
+import { Check, Copy, Share2, RefreshCw, Loader2, Users, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 
