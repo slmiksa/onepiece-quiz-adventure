@@ -18,7 +18,7 @@ const Auth: React.FC = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen pt-24 pb-16 quiz-container">
+      <div className="min-h-screen pt-24 pb-16 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center mb-12"
@@ -26,10 +26,10 @@ const Auth: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-adventure text-white mb-4 drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl font-adventure text-op-navy mb-4 drop-shadow-lg">
               اختبار ون بيس
             </h1>
-            <p className="text-lg text-white max-w-2xl mx-auto drop-shadow">
+            <p className="text-lg text-op-navy max-w-2xl mx-auto drop-shadow">
               انضم إلى مجتمعنا من محبي ون بيس وتحدى أصدقائك في اختبارات عن عالم ون بيس!
             </p>
           </motion.div>

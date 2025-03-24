@@ -19,7 +19,7 @@ const QuizGame: React.FC = () => {
   
   return (
     <Layout>
-      <div className="min-h-screen pt-24 pb-16 quiz-container">
+      <div className="min-h-screen pt-24 pb-16 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center mb-12"
@@ -27,10 +27,10 @@ const QuizGame: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-adventure text-white mb-4 drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl font-adventure text-op-navy mb-4 drop-shadow-lg">
               اختبار ون بيس
             </h1>
-            <p className="text-lg text-white max-w-2xl mx-auto drop-shadow">
+            <p className="text-lg text-op-navy max-w-2xl mx-auto drop-shadow">
               اختبر معرفتك بعالم ون بيس مع أصدقائك! يمكنك تسجيل من لاعب واحد إلى خمسة لاعبين.
             </p>
           </motion.div>
@@ -40,7 +40,7 @@ const QuizGame: React.FC = () => {
           </div>
           
           <motion.div 
-            className="mt-12 max-w-2xl mx-auto bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg p-6 text-white rtl"
+            className="mt-12 max-w-2xl mx-auto bg-white/80 backdrop-filter backdrop-blur-lg rounded-lg p-6 text-op-navy rtl shadow-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { motion } from 'framer-motion';
@@ -17,7 +16,6 @@ interface MangaItem {
 const MangaNews: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
-  // Sample manga data
   const mangaItems: MangaItem[] = [
     {
       id: 1,
@@ -202,7 +200,6 @@ const MangaNews: React.FC = () => {
   ];
   
   useEffect(() => {
-    // Simulate loading
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
@@ -212,7 +209,7 @@ const MangaNews: React.FC = () => {
   
   return (
     <Layout>
-      <div className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-[#0a2756] to-[#071a38]">
+      <div className="min-h-screen pt-24 pb-16 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center mb-12"
@@ -220,10 +217,10 @@ const MangaNews: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-adventure text-white mb-4 drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl font-adventure text-op-navy mb-4 drop-shadow-lg">
               أخبار مانجا ون بيس
             </h1>
-            <p className="text-lg text-white/80 max-w-2xl mx-auto">
+            <p className="text-lg text-op-navy/80 max-w-2xl mx-auto">
               آخر أخبار وإصدارات مانجا ون بيس مع تفاصيل الحلقات والتحديثات
             </p>
           </motion.div>
@@ -237,7 +234,7 @@ const MangaNews: React.FC = () => {
               {mangaItems.map((item, index) => (
                 <motion.article
                   key={item.id}
-                  className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all border border-white/10"
+                  className="bg-white/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all border border-gray-200"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, duration: 0.5 }}

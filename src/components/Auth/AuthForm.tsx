@@ -94,7 +94,7 @@ const AuthForm: React.FC = () => {
 
         toast({
           title: 'تم التسجيل بنجاح',
-          description: 'قد تحتاج إلى تأكيد بريدك الإلكتروني',
+          description: 'تم إرسال بريد إلكتروني ترحيبي لك! يمكنك الآن تسجيل الدخول',
         });
 
         setMode(AuthMode.SIGN_IN);
@@ -127,7 +127,7 @@ const AuthForm: React.FC = () => {
 
   return (
     <motion.div
-      className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg p-6 w-full max-w-md mx-auto border border-opacity-20 border-white shadow-glass"
+      className="bg-white/90 backdrop-filter backdrop-blur-lg rounded-lg p-6 w-full max-w-md mx-auto border border-gray-200 shadow-md"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -137,21 +137,21 @@ const AuthForm: React.FC = () => {
           <TabsTrigger 
             value="sign_in" 
             onClick={() => setMode(AuthMode.SIGN_IN)}
-            className="text-white"
+            className="text-op-navy"
           >
             تسجيل الدخول
           </TabsTrigger>
           <TabsTrigger 
             value="sign_up" 
             onClick={() => setMode(AuthMode.SIGN_UP)}
-            className="text-white"
+            className="text-op-navy"
           >
             حساب جديد
           </TabsTrigger>
           <TabsTrigger 
             value="admin" 
             onClick={() => setMode(AuthMode.ADMIN)}
-            className="text-white"
+            className="text-op-navy"
           >
             مسؤول
           </TabsTrigger>
@@ -160,7 +160,7 @@ const AuthForm: React.FC = () => {
         <TabsContent value="sign_in">
           <form onSubmit={handleUserSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">البريد الإلكتروني</Label>
+              <Label htmlFor="email" className="text-op-navy">البريد الإلكتروني</Label>
               <Input
                 id="email"
                 type="email"
@@ -168,12 +168,12 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="أدخل بريدك الإلكتروني"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">كلمة المرور</Label>
+              <Label htmlFor="password" className="text-op-navy">كلمة المرور</Label>
               <Input
                 id="password"
                 type="password"
@@ -181,7 +181,7 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="أدخل كلمة المرور"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
@@ -198,7 +198,7 @@ const AuthForm: React.FC = () => {
         <TabsContent value="sign_up">
           <form onSubmit={handleUserSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
-              <Label htmlFor="full-name" className="text-white">الاسم</Label>
+              <Label htmlFor="full-name" className="text-op-navy">الاسم</Label>
               <Input
                 id="full-name"
                 type="text"
@@ -206,12 +206,12 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="أدخل اسمك الكامل"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-white">اسم المستخدم</Label>
+              <Label htmlFor="username" className="text-op-navy">اسم المستخدم</Label>
               <Input
                 id="username"
                 type="text"
@@ -219,12 +219,12 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="أدخل اسم المستخدم"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email-signup" className="text-white">البريد الإلكتروني</Label>
+              <Label htmlFor="email-signup" className="text-op-navy">البريد الإلكتروني</Label>
               <Input
                 id="email-signup"
                 type="email"
@@ -232,18 +232,18 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="أدخل بريدك الإلكتروني"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="favorite-character" className="text-white">الشخصية المحبوبة في انيمي ون بيس</Label>
+              <Label htmlFor="favorite-character" className="text-op-navy">الشخصية المحبوبة في انيمي ون بيس</Label>
               <Select 
                 value={favoriteCharacter} 
                 onValueChange={setFavoriteCharacter}
                 required
               >
-                <SelectTrigger className="bg-white bg-opacity-20 border-none text-white">
+                <SelectTrigger className="bg-white/80 border-gray-200 text-op-navy">
                   <SelectValue placeholder="اختر شخصيتك المفضلة" />
                 </SelectTrigger>
                 <SelectContent>
@@ -257,7 +257,7 @@ const AuthForm: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password-signup" className="text-white">كلمة المرور</Label>
+              <Label htmlFor="password-signup" className="text-op-navy">كلمة المرور</Label>
               <Input
                 id="password-signup"
                 type="password"
@@ -265,7 +265,7 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="أدخل كلمة المرور"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
@@ -282,7 +282,7 @@ const AuthForm: React.FC = () => {
         <TabsContent value="admin">
           <form onSubmit={handleAdminSubmit} className="space-y-4 rtl">
             <div className="space-y-2">
-              <Label htmlFor="admin-email" className="text-white">البريد الإلكتروني</Label>
+              <Label htmlFor="admin-email" className="text-op-navy">البريد الإلكتروني</Label>
               <Input
                 id="admin-email"
                 type="email"
@@ -290,12 +290,12 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setAdminEmail(e.target.value)}
                 placeholder="أدخل البريد الإلكتروني للمسؤول"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="admin-password" className="text-white">كلمة المرور</Label>
+              <Label htmlFor="admin-password" className="text-op-navy">كلمة المرور</Label>
               <Input
                 id="admin-password"
                 type="password"
@@ -303,7 +303,7 @@ const AuthForm: React.FC = () => {
                 onChange={(e) => setAdminPassword(e.target.value)}
                 placeholder="أدخل كلمة المرور للمسؤول"
                 required
-                className="bg-white bg-opacity-20 border-none text-white placeholder:text-gray-300"
+                className="bg-white/80 border-gray-200 text-op-navy placeholder:text-gray-400"
               />
             </div>
 

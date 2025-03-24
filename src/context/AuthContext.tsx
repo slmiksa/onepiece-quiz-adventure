@@ -62,18 +62,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         
         // إرسال بريد ترحيبي للمستخدمين الجدد
-        if (event === 'SIGNED_IN' && session?.user) {
-          // التحقق مما إذا كان المستخدم جديد (يمكن استخدام حقل البيانات الوصفية أو وقت الإنشاء)
-          if (new Date(session.user.created_at).getTime() > Date.now() - 60000) { // تم إنشاؤه في آخر دقيقة
-            console.log('Sending welcome email to new user:', session.user.email);
-            try {
-              await sendWelcomeEmail(
-                session.user.email || '', 
-                session.user.user_metadata?.username || 'مستخدم جديد'
-              );
-            } catch (error) {
-              console.error('Failed to send welcome email:', error);
-            }
+        if (event === 'SIGNED_UP' && session?.user) {
+          console.log('Sending welcome email to new user:', session.user.email);
+          try {
+            await sendWelcomeEmail(
+              session.user.email || '', 
+              session.user.user_metadata?.username || 'مستخدم جديد'
+            );
+            
+            toast({
+              title: "مرحبًا بك!",
+              description: "تم إرسال بريد ترحيبي إلى عنوان بريدك الإلكتروني",
+            });
+          } catch (error) {
+            console.error('Failed to send welcome email:', error);
           }
         }
       }

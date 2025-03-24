@@ -208,7 +208,7 @@ const PlayQuiz: React.FC = () => {
         console.error('Error initializing game:', error);
         toast({
           title: "خطأ في تحميل اللعبة",
-          description: "حدث خطأ أثناء تهيئة اللعبة. سيتم إعادتك إلى ال��فحة الرئيسية.",
+          description: "حدث خطأ أثناء تهيئة اللعبة. سيتم إعادتك إلى ال��فحة ��لرئيسية.",
           variant: "destructive"
         });
         navigate('/quiz');
@@ -344,7 +344,7 @@ const PlayQuiz: React.FC = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-16 bg-white flex items-center justify-center">
           <div className="animate-bounce-slow h-16 w-16 rounded-full bg-op-yellow flex items-center justify-center">
             <span className="font-adventure text-op-navy text-2xl">...</span>
           </div>
@@ -356,7 +356,7 @@ const PlayQuiz: React.FC = () => {
   if (showCountdown) {
     return (
       <Layout>
-        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-16 bg-white flex items-center justify-center">
           <motion.div
             key={countdown}
             initial={{ scale: 2, opacity: 0 }}
@@ -375,7 +375,7 @@ const PlayQuiz: React.FC = () => {
   if (playerTransition) {
     return (
       <Layout>
-        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-16 bg-white flex items-center justify-center">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -400,7 +400,7 @@ const PlayQuiz: React.FC = () => {
     
     return (
       <Layout>
-        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-16 bg-white flex items-center justify-center">
           <ResultsScreen 
             results={results} 
             onPlayAgain={handlePlayAgain} 
@@ -417,7 +417,7 @@ const PlayQuiz: React.FC = () => {
   if (!currentQuestion || !currentPlayerState) {
     return (
       <Layout>
-        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-16 bg-white flex items-center justify-center">
           <div className="text-center text-white glass-card p-8">
             <h2 className="text-2xl mb-4">خطأ في تحميل السؤال</h2>
             <p className="mb-6">لم نتمكن من تحميل السؤال التالي. يرجى المحاولة مرة أخرى.</p>
@@ -433,7 +433,7 @@ const PlayQuiz: React.FC = () => {
   if (waitingForPlayers) {
     return (
       <Layout>
-        <div className="min-h-screen pt-24 pb-16 quiz-container flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-16 bg-white flex items-center justify-center">
           <div className="glass-card p-8 max-w-lg w-full text-center">
             <h2 className="text-2xl md:text-3xl font-adventure text-white mb-6">في انتظار اللاعبين</h2>
             <p className="text-white mb-8">شارك الرابط التالي مع أصدقائك للانضمام إلى المسابقة:</p>
@@ -464,7 +464,7 @@ const PlayQuiz: React.FC = () => {
   
   return (
     <Layout>
-      <div className="min-h-screen pt-24 pb-16 quiz-container">
+      <div className="min-h-screen pt-24 pb-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <div className="inline-block bg-white bg-opacity-20 backdrop-filter backdrop-blur-md rounded-full px-6 py-2 text-white text-sm font-medium mb-4">
