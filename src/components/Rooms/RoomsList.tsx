@@ -70,19 +70,27 @@ const RoomsList = () => {
         userMap.set(user.id, user.username);
       });
       
-      // Fetch player counts for each room
+      // Fetch player counts for each room using a single query with counts
       const playerCounts = new Map<string, number>();
       
-      for (const room of roomsData) {
-        const { data: playersData, error: playersError } = await supabase
+      // Create promises array for counting players in each room
+      const countPromises = roomsData.map(async (room) => {
+        const { data, count, error } = await supabase
           .from('room_players')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact' })
           .eq('room_id', room.id);
         
-        if (!playersError) {
-          playerCounts.set(room.id, playersData?.length || 0);
+        if (!error && count !== null) {
+          playerCounts.set(room.id, count);
+          console.log(`Room ${room.id} has ${count} players`);
+        } else {
+          console.error('Error counting players for room', room.id, error);
+          playerCounts.set(room.id, 0);
         }
-      }
+      });
+      
+      // Wait for all count operations to complete
+      await Promise.all(countPromises);
       
       // Map rooms with owner usernames and player counts
       const formattedRooms = roomsData.map(room => ({
@@ -114,9 +122,10 @@ const RoomsList = () => {
   useEffect(() => {
     fetchRooms();
     
-    // Subscribe to changes in the rooms table
+    // Subscribe to changes in the rooms table with a unique channel name
+    const channelName = `rooms-list-changes-${Date.now()}`;
     const roomsSubscription = supabase
-      .channel('schema-db-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

@@ -58,13 +58,15 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
       
       setRoom(roomData as Room);
       
-      // Get players
+      // Get players - use count: 'exact' to ensure we get accurate count
       const { data: playersData, error: playersError } = await supabase
         .from('room_players')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('room_id', roomId);
         
       if (playersError) throw playersError;
+      
+      console.log('Players in room:', playersData?.length || 0);
       
       if (!playersData || playersData.length === 0) {
         setPlayers([]);
@@ -184,9 +186,10 @@ const RoomPlayers: React.FC<RoomPlayersProps> = ({ roomId, onGameStart }) => {
   useEffect(() => {
     fetchRoomAndPlayers();
     
-    // Set up realtime subscriptions
+    // Set up realtime subscriptions with a unique channel name
+    const channelName = `room-changes-${roomId}-${Date.now()}`;
     const channel = supabase
-      .channel('room-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
