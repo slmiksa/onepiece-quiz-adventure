@@ -7,7 +7,7 @@ interface OnePieceBackgroundProps {
 
 const OnePieceBackground: React.FC<OnePieceBackgroundProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-white w-full">
       {children}
     </div>
   );
