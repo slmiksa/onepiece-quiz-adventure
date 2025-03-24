@@ -31,7 +31,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const notificationSoundRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -216,11 +216,12 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       
       // Manually add the message to the UI to avoid waiting for the subscription
       if (data && data.length > 0) {
+        // Fix: Use userProfile from AuthContext instead of directly accessing user.username
         const sentMessage: ChatMessage = {
           ...data[0],
           user_details: {
-            username: user.username || 'أنت',
-            avatar: user.avatar || ''
+            username: userProfile?.username || 'أنت',
+            avatar: userProfile?.favoriteCharacter || ''
           }
         };
         
