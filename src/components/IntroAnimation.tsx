@@ -2,9 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import AuthForm from './Auth/AuthForm';
+import { Card, CardContent } from '@/components/ui/card';
 
 const IntroAnimation: React.FC = () => {
   const [isAnimationComplete, setIsAnimationComplete] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -58,6 +63,22 @@ const IntroAnimation: React.FC = () => {
         ease: "easeOut",
         delay: 1.5
       }
+    }
+  };
+
+  const handleMangaClick = () => {
+    if (isAuthenticated) {
+      navigate('/manga');
+    } else {
+      setShowAuthForm(true);
+    }
+  };
+
+  const handleQuizClick = () => {
+    if (isAuthenticated) {
+      navigate('/quiz');
+    } else {
+      setShowAuthForm(true);
     }
   };
   
@@ -118,52 +139,86 @@ const IntroAnimation: React.FC = () => {
           </motion.div>
         </motion.div>
       ) : (
-        <motion.div 
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="container mx-auto px-4 text-center mb-20">
-            <h1 className="text-5xl md:text-7xl font-adventure text-white mb-8 tracking-wide">
-              ون بيس كويز
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-op-straw mb-12 max-w-3xl mx-auto">
-              انطلق في رحلة مليئة بالمغامرات واختبر معرفتك العميقة بعالم ون بيس المثير
-            </p>
-            
-            <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6 md:rtl:space-x-reverse rtl">
-              <button 
-                onClick={() => navigate('/manga')}
-                className="btn-primary min-w-[200px] group flex items-center justify-center"
-              >
-                <span className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">استكشف المانجا</span>
-              </button>
-              
-              <button 
-                onClick={() => navigate('/quiz')}
-                className="btn-accent min-w-[200px] group flex items-center justify-center"
-              >
-                <span className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">ابدأ الاختبار</span>
-              </button>
-            </div>
-          </div>
-          
-          <div className="absolute bottom-0 left-0 w-full">
-            <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 1, delay: 0.5 }}
+        <>
+          {showAuthForm ? (
+            <motion.div 
+              className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
             >
-              <img 
-                src="https://www.pngmart.com/files/22/One-Piece-Characters-PNG-HD.png" 
-                alt="One Piece Characters" 
-                className="w-full max-h-[350px] object-contain object-bottom"
-              />
+              <div className="w-full max-w-md p-4">
+                <Card className="relative">
+                  <button 
+                    onClick={() => setShowAuthForm(false)}
+                    className="absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black bg-opacity-20 text-white"
+                  >
+                    ✕
+                  </button>
+                  <CardContent className="p-0">
+                    <AuthForm />
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
-          </div>
-        </motion.div>
+          ) : null}
+          
+          <motion.div 
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="container mx-auto px-4 text-center mb-20">
+              <h1 className="text-5xl md:text-7xl font-adventure text-white mb-8 tracking-wide">
+                ون بيس كويز
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-op-straw mb-12 max-w-3xl mx-auto">
+                انطلق في رحلة مليئة بالمغامرات واختبر معرفتك العميقة بعالم ون بيس المثير
+              </p>
+              
+              <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6 md:rtl:space-x-reverse rtl">
+                {!isAuthenticated && !loading && (
+                  <button 
+                    onClick={() => setShowAuthForm(true)}
+                    className="btn-primary min-w-[200px] group flex items-center justify-center mb-4 md:mb-0"
+                  >
+                    <span className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">تسجيل الدخول</span>
+                  </button>
+                )}
+                
+                <button 
+                  onClick={handleMangaClick}
+                  className="btn-primary min-w-[200px] group flex items-center justify-center"
+                >
+                  <span className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">استكشف المانجا</span>
+                </button>
+                
+                <button 
+                  onClick={handleQuizClick}
+                  className="btn-accent min-w-[200px] group flex items-center justify-center"
+                >
+                  <span className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">ابدأ الاختبار</span>
+                </button>
+              </div>
+            </div>
+            
+            <div className="absolute bottom-0 left-0 w-full">
+              <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 1, delay: 0.5 }}
+              >
+                <img 
+                  src="https://www.pngmart.com/files/22/One-Piece-Characters-PNG-HD.png" 
+                  alt="One Piece Characters" 
+                  className="w-full max-h-[350px] object-contain object-bottom"
+                />
+              </motion.div>
+            </div>
+          </motion.div>
+        </>
       )}
     </div>
   );

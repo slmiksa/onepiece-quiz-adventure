@@ -41,7 +41,11 @@ const App = () => (
             <Announcement />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/manga" element={<MangaNews />} />
+              <Route path="/manga" element={
+                <AuthenticatedRoute>
+                  <MangaNews />
+                </AuthenticatedRoute>
+              } />
               <Route path="/quiz" element={
                 <AuthenticatedRoute>
                   <QuizGame />
@@ -54,10 +58,26 @@ const App = () => (
               } />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/rooms" element={<Rooms />} />
-              <Route path="/create-room" element={<CreateRoomPage />} />
-              <Route path="/room/:roomId" element={<RoomPage />} />
-              <Route path="/share/:quizId" element={<PlayQuiz />} />
+              <Route path="/rooms" element={
+                <AuthenticatedRoute>
+                  <Rooms />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/create-room" element={
+                <AuthenticatedRoute>
+                  <CreateRoomPage />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/room/:roomId" element={
+                <AuthenticatedRoute>
+                  <RoomPage />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/share/:quizId" element={
+                <AuthenticatedRoute>
+                  <PlayQuiz />
+                </AuthenticatedRoute>
+              } />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/*" element={
                 <AuthenticatedRoute requireAdmin={true}>
