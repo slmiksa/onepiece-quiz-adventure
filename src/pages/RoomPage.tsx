@@ -7,9 +7,10 @@ import RoomChat from '../components/Rooms/RoomChat';
 import { motion } from 'framer-motion';
 import AuthenticatedRoute from '@/components/AuthenticatedRoute';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, AlertCircle } from 'lucide-react';
+import { Copy, Share2, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const RoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -18,31 +19,45 @@ const RoomPage: React.FC = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [roomExists, setRoomExists] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Verify room exists
+  // معالجة محاولات إعادة الاتصال وجلب بيانات الغرفة
   useEffect(() => {
     const checkRoom = async () => {
       if (!roomId) {
         setRoomExists(false);
         setIsLoading(false);
+        setErrorMessage("معرف الغرفة غير موجود في الرابط");
         return;
       }
 
       try {
-        console.log(`Checking if room ${roomId} exists`);
+        setIsLoading(true);
+        setErrorMessage(null);
+        console.log(`Checking if room ${roomId} exists (attempt ${retryCount + 1})`);
+        
         const { data, error } = await supabase
           .from('rooms')
           .select('id, status')
           .eq('id', roomId)
           .single();
 
-        if (error || !data) {
+        if (error) {
           console.error('Room not found:', error);
+          throw error;
+        }
+
+        if (!data) {
+          console.error('No room data returned');
           setRoomExists(false);
+          setErrorMessage("الغرفة غير موجودة أو تم حذفها");
         } else {
           console.log('Room found:', data);
           setRoomExists(true);
+          setErrorMessage(null);
           
           // If game is already in 'playing' status, navigate to play
           if (data.status === 'playing') {
@@ -50,9 +65,23 @@ const RoomPage: React.FC = () => {
             navigate('/play');
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error checking room:', error);
-        setRoomExists(false);
+        setErrorMessage(error.message || "حدث خطأ أثناء جلب بيانات الغرفة");
+        
+        // Retry logic if under max attempts
+        if (retryCount < 3) {
+          setIsRetrying(true);
+          const timer = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            setIsRetrying(false);
+          }, 2000);
+          return () => clearTimeout(timer);
+        } else {
+          // After max retries show the error but don't set roomExists to false yet
+          // to allow manual retry
+          setIsRetrying(false);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -73,9 +102,15 @@ const RoomPage: React.FC = () => {
         },
         (payload) => {
           console.log('Room status change detected:', payload);
-          // If room was deleted or status changed to 'playing'
+          // If room status changed to 'playing'
+          if (payload.new && typeof payload.new === 'object' && 'status' in payload.new && payload.new.status === 'playing') {
+            sessionStorage.setItem('quizRoomId', roomId as string);
+            navigate('/play');
+          }
+          // If room was deleted
           if (payload.eventType === 'DELETE') {
             setRoomExists(false);
+            setErrorMessage("تم حذف الغرفة");
           }
         }
       )
@@ -86,7 +121,7 @@ const RoomPage: React.FC = () => {
     return () => {
       supabase.removeChannel(roomStatusChannel);
     };
-  }, [roomId, navigate]);
+  }, [roomId, navigate, retryCount]);
 
   // Reset copy state after 2 seconds
   useEffect(() => {
@@ -111,6 +146,12 @@ const RoomPage: React.FC = () => {
       // Redirect to the quiz page
       navigate('/play');
     }
+  };
+
+  // Manual retry function
+  const handleRetry = () => {
+    setRetryCount(0);
+    setIsRetrying(true);
   };
 
   // Copy room link to clipboard
@@ -164,6 +205,53 @@ const RoomPage: React.FC = () => {
             <div className="text-white text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
               <p>جاري التحميل...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // عرض واجهة الخطأ مع زر إعادة المحاولة
+  if (errorMessage) {
+    return (
+      <Layout>
+        <div className="min-h-screen pt-24 pb-16 quiz-container">
+          <div className="container mx-auto px-4 text-center">
+            <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg border border-opacity-20 border-white shadow-glass p-10 max-w-md mx-auto">
+              <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-4">خطأ</h2>
+              <Alert variant="destructive" className="mb-6 bg-red-500 bg-opacity-10">
+                <AlertTitle>حدث خطأ أثناء جلب بيانات الغرفة</AlertTitle>
+                <AlertDescription>
+                  {errorMessage}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="flex flex-col space-y-4">
+                <Button 
+                  onClick={handleRetry}
+                  className="bg-op-blue text-white hover:bg-op-ocean flex items-center gap-2"
+                  disabled={isRetrying}
+                >
+                  {isRetrying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      جاري إعادة المحاولة...
+                    </>
+                  ) : (
+                    <>إعادة المحاولة</>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={() => navigate('/rooms')}
+                  variant="outline"
+                  className="border-white text-white hover:bg-white hover:bg-opacity-10"
+                >
+                  العودة إلى قائمة الغرف
+                </Button>
+              </div>
             </div>
           </div>
         </div>

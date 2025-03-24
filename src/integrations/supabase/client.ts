@@ -15,16 +15,29 @@ export const supabase = createClient<Database>(
   {
     realtime: {
       params: {
-        eventsPerSecond: 10,
-        ephemeral: false
+        eventsPerSecond: 20,  // زيادة معدل الأحداث المسموح بها في الثانية
+        fastlane: true,       // تمكين fastlane لتحسين الأداء
+        recovery: true,       // تمكين الاسترداد التلقائي للاتصال
+        ephemeral: false,     // تعيين ephemeral إلى false لضمان استمرارية البيانات
+        transportOptions: {
+          maxRetries: 5,      // زيادة عدد المحاولات
+          retryTimeoutMs: 1000 // الوقت بين كل محاولة إعادة الاتصال
+        }
       }
     },
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true  // تمكين اكتشاف الجلسة في عنوان URL
     },
     db: {
       schema: 'public'
+    },
+    global: {
+      headers: {
+        'x-application-name': 'one-piece-quiz' // إضافة رأس مخصص للتمييز بين الطلبات
+      },
+      fetch: fetch // استخدام fetch API القياسية
     }
   }
 );
@@ -33,13 +46,25 @@ export const supabase = createClient<Database>(
 (async () => {
   try {
     // Enable realtime for the tables we need
-    await supabase.channel('enable-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {})
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players' }, () => {})
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, () => {})
-      .subscribe();
+    const channel = supabase.channel('enable-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {
+        console.log('Room change detected');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players' }, () => {
+        console.log('Room player change detected');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, () => {
+        console.log('Room message change detected');
+      });
     
-    console.log('Realtime subscriptions enabled for rooms tables');
+    await channel.subscribe((status) => {
+      console.log(`Realtime subscriptions status: ${status}`);
+      if (status === 'SUBSCRIBED') {
+        console.log('Realtime subscriptions enabled for rooms tables');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Error subscribing to realtime channel');
+      }
+    });
   } catch (error) {
     console.error('Error enabling realtime:', error);
   }
