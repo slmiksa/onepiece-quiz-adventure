@@ -34,6 +34,7 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
   const { user } = useAuth();
   const notificationSoundRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
 
   const fetchMessages = async () => {
     try {
@@ -57,27 +58,39 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       
       // Then fetch user details for each message
       const userIds = [...new Set(messagesData.map(msg => msg.user_id))];
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, username, avatar')
-        .in('id', userIds);
-        
-      if (usersError) throw usersError;
       
-      // Map user details to messages
-      const messagesWithUserDetails = messagesData.map(message => {
-        const userDetail = usersData?.find(u => u.id === message.user_id);
-        return {
-          ...message,
-          user_details: userDetail ? {
-            username: userDetail.username,
-            avatar: userDetail.avatar
-          } : {
-            username: 'Unknown User',
-            avatar: ''
+      const messagesWithUserDetails: ChatMessage[] = await Promise.all(
+        messagesData.map(async (message) => {
+          try {
+            // Fetch user details for each message individually to avoid RLS policy issues
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('username, avatar')
+              .eq('id', message.user_id)
+              .single();
+              
+            return {
+              ...message,
+              user_details: userData ? {
+                username: userData.username,
+                avatar: userData.avatar
+              } : {
+                username: 'مستخدم مجهول',
+                avatar: ''
+              }
+            };
+          } catch (err) {
+            console.error('Error fetching user details:', err);
+            return {
+              ...message,
+              user_details: {
+                username: 'مستخدم مجهول',
+                avatar: ''
+              }
+            };
           }
-        };
-      });
+        })
+      );
       
       setMessages(messagesWithUserDetails);
     } catch (error: any) {
@@ -91,9 +104,12 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
   useEffect(() => {
     fetchMessages();
     
+    // Generate a unique channel name for this room
+    const channelName = `room-messages-${roomId}-${Date.now()}`;
+    
     // Set up realtime subscription for new messages
     const channel = supabase
-      .channel('room-messages-' + roomId)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -112,8 +128,13 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
               .select('username, avatar')
               .eq('id', payload.new.user_id)
               .single();
+            
+            console.log('User data fetched:', userData);
               
-            if (userError) throw userError;
+            if (userError) {
+              console.error('Error fetching user data:', userError);
+              // Continue with a default user
+            }
             
             // Create a new correctly typed ChatMessage object
             const newMessageObject: ChatMessage = {
@@ -122,11 +143,14 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
               message: payload.new.message,
               created_at: payload.new.created_at,
               user_details: {
-                username: userData?.username || 'Unknown User',
+                username: userData?.username || 'مستخدم مجهول',
                 avatar: userData?.avatar || ''
               }
             };
             
+            console.log('Adding new message to state:', newMessageObject);
+            
+            // Add the new message to the state using functional update to avoid race conditions
             setMessages(prevMessages => [...prevMessages, newMessageObject]);
             
             // Play notification sound for messages from other users
@@ -142,8 +166,14 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       )
       .subscribe();
       
+    // Save the channel reference for cleanup
+    channelRef.current = channel;
+      
     return () => {
-      supabase.removeChannel(channel);
+      // Clean up the subscription using the saved reference
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
   }, [roomId, user?.id]);
 
@@ -161,22 +191,47 @@ const RoomChat: React.FC<RoomChatProps> = ({ roomId }) => {
       setSendingMessage(true);
       setError(null);
       
+      const messageToSend = newMessage.trim();
+      
+      // Clear input immediately for better UX
+      setNewMessage('');
+      
+      console.log('Sending message:', messageToSend);
+      
       // Insert message
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('room_messages')
         .insert({
           room_id: roomId,
           user_id: user.id,
-          message: newMessage.trim()
-        });
+          message: messageToSend
+        })
+        .select();
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
-      // Clear input
-      setNewMessage('');
+      console.log('Message sent successfully:', data);
+      
+      // Manually add the message to the UI to avoid waiting for the subscription
+      if (data && data.length > 0) {
+        const sentMessage: ChatMessage = {
+          ...data[0],
+          user_details: {
+            username: user.username || 'أنت',
+            avatar: user.avatar || ''
+          }
+        };
+        
+        setMessages(prevMessages => [...prevMessages, sentMessage]);
+      }
+      
     } catch (error: any) {
       console.error('Error sending message:', error);
       setError('حدث خطأ أثناء إرسال الرسالة');
+      // Restore the message so the user can try again
+      setNewMessage(newMessage);
     } finally {
       setSendingMessage(false);
     }
